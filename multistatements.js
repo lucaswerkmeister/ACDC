@@ -60,8 +60,8 @@
         } );
 
         const publishButton = new OO.ui.ButtonWidget( {
-            label: 'Publish statements',
-            flags: 'progressive',
+            label: mw.message( 'wikibasemediainfo-filepage-publish' ).text(),
+            flags: [ 'primary', 'progressive' ],
             $overlay: this.$overlay,
         } );
         publishButton.on( 'click', async () => {
