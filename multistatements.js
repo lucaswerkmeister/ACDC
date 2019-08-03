@@ -31,6 +31,7 @@
             allowArbitrary: true,
             placeholder: 'File:Example.png',
             indicator: 'required',
+            $overlay: this.$overlay,
         } );
         filesWidget.on( 'add', ( item, index ) => {
             if ( !item.getData().startsWith( 'File:' ) ) {
@@ -39,14 +40,17 @@
             }
         } );
 
-        const addPropertyWidget = new AddPropertyWidget(),
-              statementWidgets = [];
+        const statementWidgets = [],
+              addPropertyWidget = new AddPropertyWidget( {
+                  $overlay: this.$overlay,
+              } );
         addPropertyWidget.on( 'choose', ( { id } ) => {
             const statementWidget = new StatementWidget( {
                 entityId: '', // this widget is reused for multiple entities, we inject the entity IDs on publish
                 propertyId: id,
                 isDefaultProperty: false,
                 properties: { [ id ]: 'wikibase-entityid' }, // pretend all properties use entity IDs, for now
+                $overlay: this.$overlay,
             } );
             statementWidgets.push( statementWidget );
 
@@ -58,6 +62,7 @@
         const publishButton = new OO.ui.ButtonWidget( {
             label: 'Publish statements',
             flags: 'progressive',
+            $overlay: this.$overlay,
         } );
         publishButton.on( 'click', async () => {
             const titles = filesWidget.getItems().map( item => item.getData() ),
