@@ -1,4 +1,17 @@
 ( async function () {
+
+    async function titlesToEntityIds( titles ) {
+        const api = new mw.Api(),
+              entityIds = [];
+        let someTitles;
+        while ( ( someTitles = titles.splice( 0, 50 ) ).length > 0 ) {
+            const response = await api.get( { action: 'query', titles: someTitles, formatversion: 2 } ),
+                  someEntityIds = response.query.pages.map( page => `M${ page.pageid }` );
+            entityIds.push( ...someEntityIds );
+        }
+        return entityIds;
+    }
+    
     const require = await mw.loader.using( [ 'oojs', 'oojs-ui-core', 'oojs-ui-widgets', 'oojs-ui-windows', 'wikibase.mediainfo.statements', 'wikibase.datamodel.Claim', 'mediawiki.api' ] ),
           { StatementWidget, AddPropertyWidget } = require( 'wikibase.mediainfo.statements' );
 
@@ -46,15 +59,8 @@
             flags: 'progressive',
         } );
         publishButton.on( 'click', async () => {
-            const api = new mw.Api(),
-                  titles = filesWidget.getItems().map( item => item.getData() ),
-                  entityIds = [];
-            let someTitles;
-            while ( ( someTitles = titles.splice( 0, 50 ) ).length > 0 ) {
-                const response = await api.get( { action: 'query', titles: someTitles, formatversion: 2 } ),
-                      someEntityIds = response.query.pages.map( page => `M${ page.pageid }` );
-                entityIds.push( ...someEntityIds );
-            }
+            const titles = filesWidget.getItems().map( item => item.getData() ),
+                  entityIds = await titlesToEntityIds( titles );
             for ( const entityId of entityIds ) {
                 const guidGenerator = new wikibase.utilities.ClaimGuidGenerator( entityId );
                 for ( const statementWidget of statementWidgets ) {
