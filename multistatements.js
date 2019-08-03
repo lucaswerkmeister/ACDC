@@ -91,7 +91,7 @@
         this.$body.append( this.content.$element );
     };
     StatementsDialog.prototype.getBodyHeight = function () {
-        return 1000; // TODO figure this out
+        return 1000; // TODO figure this out; note: if the PanelLayout has expanded: false, then this.content.outerLength( true ) correctly sets the initial height (but no auto-resize)
     }
 
     const windowManager = new OO.ui.WindowManager(),
