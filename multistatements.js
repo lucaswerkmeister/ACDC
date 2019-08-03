@@ -1,4 +1,5 @@
 ( async function () {
+    'use strict';
 
     async function titlesToEntityIds( titles ) {
         const api = new mw.Api(),
