@@ -21,29 +21,40 @@
             size: 'large',
         }, config ) );
     }
-    OO.inheritClass( StatementsDialog, OO.ui.Dialog );
+    OO.inheritClass( StatementsDialog, OO.ui.ProcessDialog );
     StatementsDialog.static.name = 'statements';
     StatementsDialog.static.title = 'Statements';
+    StatementsDialog.static.actions = [
+        {
+            action: 'save',
+            label: mw.message( 'wikibasemediainfo-filepage-publish' ).text(),
+            flags: [ 'primary', 'progressive' ],
+        },
+        {
+            label: mw.message( 'wikibasemediainfo-filepage-cancel' ).text(),
+            flags: [ 'safe', 'close' ],
+        },
+    ];
     StatementsDialog.prototype.initialize = function () {
         StatementsDialog.super.prototype.initialize.call( this );
 
-        const filesWidget = new OO.ui.TagMultiselectWidget( {
+        this.filesWidget = new OO.ui.TagMultiselectWidget( {
             allowArbitrary: true,
             placeholder: 'File:Example.png',
             indicator: 'required',
             $overlay: this.$overlay,
         } );
-        filesWidget.on( 'add', ( item, index ) => {
+        this.filesWidget.on( 'add', ( item, index ) => {
             if ( !item.getData().startsWith( 'File:' ) ) {
                 item.setData( `File:${ item.getData() }` );
                 item.setLabel( item.getData() );
             }
         } );
 
-        const statementWidgets = [],
-              addPropertyWidget = new AddPropertyWidget( {
-                  $overlay: this.$overlay,
-              } );
+        this.statementWidgets = [];
+        const addPropertyWidget = new AddPropertyWidget( {
+            $overlay: this.$overlay,
+        } );
         addPropertyWidget.on( 'choose', ( { id } ) => {
             const statementWidget = new StatementWidget( {
                 entityId: '', // this widget is reused for multiple entities, we inject the entity IDs on publish
@@ -52,43 +63,43 @@
                 properties: { [ id ]: 'wikibase-entityid' }, // pretend all properties use entity IDs, for now
                 $overlay: this.$overlay,
             } );
-            statementWidgets.push( statementWidget );
+            this.statementWidgets.push( statementWidget );
 
             statementWidget.getRemovals = () => []; // this widget shall never remove statements
 
             statementWidget.$element.insertBefore( addPropertyWidget.$element );
         } );
 
-        const publishButton = new OO.ui.ButtonWidget( {
-            label: mw.message( 'wikibasemediainfo-filepage-publish' ).text(),
-            flags: [ 'primary', 'progressive' ],
-            $overlay: this.$overlay,
-        } );
-        publishButton.on( 'click', async () => {
-            const titles = filesWidget.getItems().map( item => item.getData() ),
-                  entityIds = await titlesToEntityIds( titles );
-            for ( const entityId of entityIds ) {
-                const guidGenerator = new wikibase.utilities.ClaimGuidGenerator( entityId );
-                for ( const statementWidget of statementWidgets ) {
-                    for ( const item of statementWidget.items ) {
-                        const statement = item.data,
-                              oldClaim = statement.getClaim(),
-                              newClaim = new wb.datamodel.Claim( oldClaim.getMainSnak(), oldClaim.getQualifiers(), guidGenerator.newGuid() );
-                        statement.setClaim( newClaim );
-                    }
-                    await statementWidget.submit( 0 );
-                }
-            }
-            this.emit( 'submitted' );
-        } );
-
         this.content = new OO.ui.PanelLayout( { padded: true } );
         this.content.$element.append(
-            filesWidget.$element,
+            this.filesWidget.$element,
             addPropertyWidget.$element,
-            publishButton.$element,
         );
         this.$body.append( this.content.$element );
+    };
+    StatementsDialog.prototype.getActionProcess = function ( action ) {
+        switch ( action ) {
+        case 'save':
+            return new OO.ui.Process( async () => {
+                const titles = this.filesWidget.getItems().map( item => item.getData() ),
+                      entityIds = await titlesToEntityIds( titles );
+                for ( const entityId of entityIds ) {
+                    const guidGenerator = new wikibase.utilities.ClaimGuidGenerator( entityId );
+                    for ( const statementWidget of this.statementWidgets ) {
+                        for ( const item of statementWidget.items ) {
+                            const statement = item.data,
+                                  oldClaim = statement.getClaim(),
+                                  newClaim = new wb.datamodel.Claim( oldClaim.getMainSnak(), oldClaim.getQualifiers(), guidGenerator.newGuid() );
+                            statement.setClaim( newClaim );
+                        }
+                        await statementWidget.submit( 0 );
+                    }
+                }
+                this.close();
+            }, this );
+        default:
+            return StatementsDialog.super.prototype.getActionProcess.call( this, action );
+        }
     };
     StatementsDialog.prototype.getBodyHeight = function () {
         return 1000; // TODO figure this out; note: if the PanelLayout has expanded: false, then this.content.outerLength( true ) correctly sets the initial height (but no auto-resize)
@@ -99,5 +110,4 @@
     $( document.body ).append( windowManager.$element );
     windowManager.addWindows( [ statementDialog ] );
     windowManager.openWindow( statementDialog );
-    statementDialog.on( 'submitted', () => windowManager.closeWindow( statementDialog ) );
 } )();
