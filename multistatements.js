@@ -29,6 +29,7 @@
             action: 'save',
             label: mw.message( 'wikibasemediainfo-filepage-publish' ).text(),
             flags: [ 'primary', 'progressive' ],
+            disabled: true, // see updateCanSave
         },
         {
             label: mw.message( 'wikibasemediainfo-filepage-cancel' ).text(),
@@ -50,6 +51,7 @@
                 item.setLabel( item.getData() );
             }
         } );
+        this.filesWidget.connect( this, { change: 'updateCanSave' } );
 
         this.statementWidgets = [];
         const addPropertyWidget = new AddPropertyWidget( {
@@ -63,6 +65,7 @@
                 properties: { [ id ]: 'wikibase-entityid' }, // pretend all properties use entity IDs, for now
                 $overlay: this.$overlay,
             } );
+            statementWidget.connect( this, { change: 'updateCanSave' } );
             this.statementWidgets.push( statementWidget );
 
             statementWidget.getRemovals = () => []; // this widget shall never remove statements
@@ -100,6 +103,13 @@
         default:
             return StatementsDialog.super.prototype.getActionProcess.call( this, action );
         }
+    };
+    StatementsDialog.prototype.updateCanSave = function () {
+        this.actions.setAbilities( {
+            save: this.filesWidget.getItems().length &&
+                this.statementWidgets.some(
+                    statementWidget => statementWidget.getData().length ),
+        } );
     };
     StatementsDialog.prototype.getBodyHeight = function () {
         return 1000; // TODO figure this out; note: if the PanelLayout has expanded: false, then this.content.outerLength( true ) correctly sets the initial height (but no auto-resize)
