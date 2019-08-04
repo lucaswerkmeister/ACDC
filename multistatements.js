@@ -149,8 +149,11 @@
             expanded: false,
         } );
         this.$body.append( this.content.$element );
-
-        setTimeout( () => filesField.fieldWidget.updateInputSize(), 0 ); // TODO probably move most/all of this to getSetupProcess()?
+    };
+    StatementsDialog.prototype.getReadyProcess = function ( data ) {
+        return StatementsDialog.super.prototype.getReadyProcess.call( this, data ).next( async () => {
+            this.filesWidget.updateInputSize();
+        } );
     };
     StatementsDialog.prototype.getActionProcess = function ( action ) {
         switch ( action ) {
