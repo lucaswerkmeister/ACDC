@@ -71,17 +71,34 @@
     function FilesWidget( config ) {
         FilesWidget.super.call( this, $.extend( {
             allowArbitrary: true,
-            placeholder: 'File:Example.png',
+            placeholder: 'File:Example.png | File:Example.jpg',
         }, config ) );
-
-        this.on( 'add', ( item, index ) => {
-            if ( !item.getData().startsWith( 'File:' ) ) {
-                item.setData( `File:${ item.getData() }` );
-                item.setLabel( item.getData() );
-            }
-        } );
     }
     OO.inheritClass( FilesWidget, OO.ui.TagMultiselectWidget );
+    FilesWidget.prototype.addTagFromInput = function () {
+        const titles = this.input.getValue().split( '|' ).map( title => {
+            title = title.trim();
+            if ( title.startsWith( 'File:' ) ) {
+                return title;
+            } else {
+                return `File:${ title }`;
+            }
+        } );
+        this.clearInput();
+
+        for ( const title of titles ) {
+            if ( this.isAllowedData( title ) || this.allowDisplayInvalidTags ) {
+                this.addTag( title );
+            } else {
+                let inputValue = this.input.getValue();
+                if ( inputValue ) {
+                    inputValue += ' | ';
+                }
+                inputValue += title;
+                this.input.setValue( inputValue );
+            }
+        }
+    };
     FilesWidget.prototype.getTitles = function () {
         return this.getItems().map( item => item.getData() );
     };
