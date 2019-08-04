@@ -16,6 +16,20 @@
     const require = await mw.loader.using( [ 'oojs', 'oojs-ui-core', 'oojs-ui-widgets', 'oojs-ui-windows', 'wikibase.mediainfo.statements', 'wikibase.datamodel.Claim', 'mediawiki.api' ] ),
           { StatementWidget, AddPropertyWidget } = require( 'wikibase.mediainfo.statements' );
 
+    function failSanityCheck( component ) {
+        throw new Error( `${ component } seems to have changed incompatibly, this script must be updated before it can be safely used!` );
+    }
+
+    function sanityCheckStatementWidgetPrototype() {
+        if ( !( 'getChanges' in StatementWidget.prototype &&
+                'getRemovals' in StatementWidget.prototype ) ) {
+            // if StatementWidget doesn’t use these methods, it’ll make wrong edits
+            failSanityCheck( 'StatementWidget.prototype' );
+        }
+    }
+
+    sanityCheckStatementWidgetPrototype();
+
     function StatementsDialog( config ) {
         StatementsDialog.super.call( this, $.extend( {
             size: 'large',
