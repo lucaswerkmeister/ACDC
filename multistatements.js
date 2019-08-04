@@ -205,8 +205,8 @@
     };
 
     const windowManager = new OO.ui.WindowManager(),
-          statementDialog = new StatementsDialog( {} );
+          statementsDialog = new StatementsDialog( {} );
     $( document.body ).append( windowManager.$element );
-    windowManager.addWindows( [ statementDialog ] );
-    windowManager.openWindow( statementDialog );
+    windowManager.addWindows( [ statementsDialog ] );
+    windowManager.openWindow( statementsDialog );
 } )( mediaWiki, jQuery );
