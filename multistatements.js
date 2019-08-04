@@ -3,9 +3,10 @@
 
     async function titlesToEntityIds( titles ) {
         const api = new mw.Api(),
+              allTitles = titles.slice(), // copy that we can splice without affecting the original
               entityIds = [];
         let someTitles;
-        while ( ( someTitles = titles.splice( 0, 50 ) ).length > 0 ) {
+        while ( ( someTitles = allTitles.splice( 0, 50 ) ).length > 0 ) {
             const response = await api.get( { action: 'query', titles: someTitles, formatversion: 2 } ),
                   someEntityIds = response.query.pages.map( page => `M${ page.pageid }` );
             entityIds.push( ...someEntityIds );
