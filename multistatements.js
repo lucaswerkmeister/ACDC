@@ -23,7 +23,7 @@
     }
     OO.inheritClass( StatementsDialog, OO.ui.ProcessDialog );
     StatementsDialog.static.name = 'statements';
-    StatementsDialog.static.title = 'Statements';
+    StatementsDialog.static.title = 'MultiStatements';
     StatementsDialog.static.actions = [
         {
             action: 'save',
