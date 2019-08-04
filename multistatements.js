@@ -68,6 +68,14 @@
     sanityCheckStatementWidgetPrototype();
     sanityCheckStatementEquals();
 
+    function ensureFileNamespace( title ) {
+        if ( title.startsWith( 'File:' ) ) {
+            return title;
+        } else {
+            return `File:${ title }`;
+        }
+    }
+
     function FileInputWidget( config ) {
         FileInputWidget.super.call( this, $.extend( {
             placeholder: 'File:Example.png',
@@ -85,15 +93,11 @@
             return $.Deferred().resolve( [] ).promise();
         }
 
-        if ( !prefix.startsWith( 'File:' ) ) {
-            prefix = `File:${ prefix }`;
-        }
-
         const api = new mw.Api();
         return api.get( {
             action: 'query',
             list: 'search',
-            srsearch: `prefix:${ prefix }`,
+            srsearch: `prefix:${ ensureFileNamespace( prefix ) }`,
             srinfo: [ /* no metadata */ ],
             srprop: [ /* no properties (we only need title, which is always returned) */ ],
             formatversion: 2,
@@ -121,14 +125,8 @@
     }
     OO.inheritClass( FilesWidget, OO.ui.TagMultiselectWidget );
     FilesWidget.prototype.addTagFromInput = function () {
-        const titles = this.input.getValue().split( '|' ).map( title => {
-            title = title.trim();
-            if ( title.startsWith( 'File:' ) ) {
-                return title;
-            } else {
-                return `File:${ title }`;
-            }
-        } );
+        const titles = this.input.getValue().split( '|' )
+              .map( title => ensureFileNamespace( title.trim() ) );
         this.clearInput();
 
         for ( const title of titles ) {
