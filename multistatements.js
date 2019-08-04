@@ -84,6 +84,7 @@
             showPendingRequest: false,
             $container: this.$input, // the default is this.$element, which in a non-'outline' TagMultiselectWidget is never attached to the DOM, so the lookup can’t position itself relative to it
         }, config ) );
+        this.lookupMenu.connect( this, { choose: [ 'emit', 'select' ] } );
     }
     OO.inheritClass( FileInputWidget, OO.ui.TextInputWidget );
     OO.mixinClass( FileInputWidget, OO.ui.mixin.LookupElement );
@@ -122,6 +123,7 @@
                 placeholder: 'File:Example.png | File:Example.jpg',
             }, config ) ),
         }, config ) );
+        this.input.connect( this, { select: 'addTagFromInput' } );
     }
     OO.inheritClass( FilesWidget, OO.ui.TagMultiselectWidget );
     FilesWidget.prototype.addTagFromInput = function () {
