@@ -1,4 +1,4 @@
-( async function () {
+( async function ( mw, $ ) {
     'use strict';
 
     const require = await mw.loader.using( [
@@ -190,4 +190,4 @@
     $( document.body ).append( windowManager.$element );
     windowManager.addWindows( [ statementDialog ] );
     windowManager.openWindow( statementDialog );
-} )();
+} )( mediaWiki, jQuery );
