@@ -52,6 +52,7 @@
             }
         } );
         this.filesWidget.connect( this, { change: 'updateCanSave' } );
+        this.filesWidget.connect( this, { change: 'updateSize' } );
 
         this.statementWidgets = [];
         const addPropertyWidget = new AddPropertyWidget( {
@@ -66,14 +67,20 @@
                 $overlay: this.$overlay,
             } );
             statementWidget.connect( this, { change: 'updateCanSave' } );
+            statementWidget.connect( this, { change: 'updateSize' } );
             this.statementWidgets.push( statementWidget );
 
             statementWidget.getRemovals = () => []; // this widget shall never remove statements
 
             statementWidget.$element.insertBefore( addPropertyWidget.$element );
         } );
+        addPropertyWidget.connect( this, { choose: 'updateSize' } );
+        // TODO we should also updateSize when the AddPropertyWidget enters/leaves editing mode, but it doesn’t emit an event for that yet
 
-        this.content = new OO.ui.PanelLayout( { padded: true } );
+        this.content = new OO.ui.PanelLayout( {
+            padded: true,
+            expanded: false,
+        } );
         this.content.$element.append(
             this.filesWidget.$element,
             addPropertyWidget.$element,
@@ -112,7 +119,14 @@
         } );
     };
     StatementsDialog.prototype.getBodyHeight = function () {
-        return 1000; // TODO figure this out; note: if the PanelLayout has expanded: false, then this.content.outerLength( true ) correctly sets the initial height (but no auto-resize)
+        // we ceil the body height to the next multiple of 200 so it doesn’t change too often
+        return this.$head.outerHeight( true ) +
+            Math.max(
+                400, // minimum size to start out with
+                Math.ceil( this.$body.outerHeight( true ) / 200 ) * 200,
+            ) +
+            this.$foot.outerHeight( true ) +
+            50; // not sure why a bit of extra space is necessary :/
     };
 
     const windowManager = new OO.ui.WindowManager(),
