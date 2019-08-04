@@ -68,10 +68,55 @@
     sanityCheckStatementWidgetPrototype();
     sanityCheckStatementEquals();
 
+    function FileInputWidget( config ) {
+        FileInputWidget.super.call( this, $.extend( {
+            placeholder: 'File:Example.png',
+        }, config ) );
+        OO.ui.mixin.LookupElement.call( this, $.extend( {
+            showPendingRequest: false,
+            $container: this.$input, // the default is this.$element, which in a non-'outline' TagMultiselectWidget is never attached to the DOM, so the lookup can’t position itself relative to it
+        }, config ) );
+    }
+    OO.inheritClass( FileInputWidget, OO.ui.TextInputWidget );
+    OO.mixinClass( FileInputWidget, OO.ui.mixin.LookupElement );
+    FileInputWidget.prototype.getLookupRequest = function () {
+        let prefix = this.getValue();
+        if ( !prefix || prefix.indexOf( '|' ) !== -1 ) {
+            return $.Deferred().resolve( [] ).promise();
+        }
+
+        if ( !prefix.startsWith( 'File:' ) ) {
+            prefix = `File:${ prefix }`;
+        }
+
+        const api = new mw.Api();
+        return api.get( {
+            action: 'query',
+            list: 'search',
+            srsearch: `prefix:${ prefix }`,
+            srinfo: [ /* no metadata */ ],
+            srprop: [ /* no properties (we only need title, which is always returned) */ ],
+            formatversion: 2,
+        } );
+    };
+    FileInputWidget.prototype.getLookupCacheDataFromResponse = function ( response ) {
+        return response.query.search.map( result => result.title );
+    };
+    FileInputWidget.prototype.getLookupMenuOptionsFromData = function ( titles ) {
+        return titles.map( title => {
+            return new OO.ui.MenuOptionWidget( {
+                data: title,
+                label: title,
+            } );
+        } );
+    };
+
     function FilesWidget( config ) {
         FilesWidget.super.call( this, $.extend( {
             allowArbitrary: true,
-            placeholder: 'File:Example.png | File:Example.jpg',
+            inputWidget: new FileInputWidget( $.extend( {
+                placeholder: 'File:Example.png | File:Example.jpg',
+            }, config ) ),
         }, config ) );
     }
     OO.inheritClass( FilesWidget, OO.ui.TagMultiselectWidget );
