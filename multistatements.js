@@ -153,6 +153,7 @@
     StatementsDialog.prototype.getReadyProcess = function ( data ) {
         return StatementsDialog.super.prototype.getReadyProcess.call( this, data ).next( async () => {
             this.filesWidget.updateInputSize();
+            this.filesWidget.focus();
         } );
     };
     StatementsDialog.prototype.getActionProcess = function ( action ) {
