@@ -85,6 +85,18 @@
             $container: this.$input, // the default is this.$element, which in a non-'outline' TagMultiselectWidget is never attached to the DOM, so the lookup can’t position itself relative to it
         }, config ) );
         this.lookupMenu.connect( this, { choose: [ 'emit', 'select' ] } );
+        this.$input.on( 'paste', ( { originalEvent: clipboardEvent } ) => {
+            const value = clipboardEvent.clipboardData.getData( 'text' )
+                  .trim()
+                  .replace( /[\n\t]/g, ' | ' ),
+                  inputElement = this.$input[ 0 ];
+
+            inputElement.setRangeText( value );
+            inputElement.selectionStart += value.length;
+            inputElement.selectionEnd = inputElement.selectionStart;
+
+            clipboardEvent.preventDefault();
+        } );
     }
     OO.inheritClass( FileInputWidget, OO.ui.TextInputWidget );
     OO.mixinClass( FileInputWidget, OO.ui.mixin.LookupElement );
