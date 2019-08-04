@@ -68,6 +68,24 @@
     sanityCheckStatementWidgetPrototype();
     sanityCheckStatementEquals();
 
+    function FilesWidget( config ) {
+        FilesWidget.super.call( this, $.extend( {
+            allowArbitrary: true,
+            placeholder: 'File:Example.png',
+        }, config ) );
+
+        this.on( 'add', ( item, index ) => {
+            if ( !item.getData().startsWith( 'File:' ) ) {
+                item.setData( `File:${ item.getData() }` );
+                item.setLabel( item.getData() );
+            }
+        } );
+    }
+    OO.inheritClass( FilesWidget, OO.ui.TagMultiselectWidget );
+    FilesWidget.prototype.getTitles = function () {
+        return this.getItems().map( item => item.getData() );
+    };
+
     function StatementsDialog( config ) {
         StatementsDialog.super.call( this, $.extend( {
             size: 'large',
@@ -91,17 +109,9 @@
     StatementsDialog.prototype.initialize = function () {
         StatementsDialog.super.prototype.initialize.call( this );
 
-        this.filesWidget = new OO.ui.TagMultiselectWidget( {
-            allowArbitrary: true,
-            placeholder: 'File:Example.png',
+        this.filesWidget = new FilesWidget( {
             indicator: 'required',
             $overlay: this.$overlay,
-        } );
-        this.filesWidget.on( 'add', ( item, index ) => {
-            if ( !item.getData().startsWith( 'File:' ) ) {
-                item.setData( `File:${ item.getData() }` );
-                item.setLabel( item.getData() );
-            }
         } );
         this.filesWidget.connect( this, { change: 'updateCanSave' } );
         this.filesWidget.connect( this, { change: 'updateSize' } );
@@ -160,7 +170,7 @@
         switch ( action ) {
         case 'save':
             return new OO.ui.Process( async () => {
-                const titles = this.filesWidget.getItems().map( item => item.getData() ),
+                const titles = this.filesWidget.getTitles(),
                       entityIds = await titlesToEntityIds( titles ),
                       entityData = await entityIdsToData( entityIds, [ 'info', 'claims' ] ),
                       deserializer = new wikibase.serialization.StatementListDeserializer();
@@ -188,7 +198,7 @@
     };
     StatementsDialog.prototype.updateCanSave = function () {
         this.actions.setAbilities( {
-            save: this.filesWidget.getItems().length &&
+            save: this.filesWidget.getTitles().length &&
                 this.statementWidgets.some(
                     statementWidget => statementWidget.getData().length ),
         } );
