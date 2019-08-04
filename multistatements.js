@@ -127,14 +127,27 @@
         addPropertyWidget.connect( this, { choose: 'updateSize' } );
         // TODO we should also updateSize when the AddPropertyWidget enters/leaves editing mode, but it doesn’t emit an event for that yet
 
+        const filesField = new OO.ui.FieldLayout( this.filesWidget, {
+            label: 'Files to edit', // TODO i18n
+            align: 'top',
+        } );
+        filesField.$header.wrap( '<h3>' );
+        const addPropertyField = new OO.ui.FieldLayout( addPropertyWidget, {
+            label: 'Statements to add', // TODO i18n
+            align: 'top',
+        } );
+        addPropertyField.$header.wrap( '<h3>' );
+
         this.content = new OO.ui.PanelLayout( {
+            content: [ new OO.ui.FieldsetLayout( {
+                items: [
+                    filesField,
+                    addPropertyField,
+                ],
+            } ) ],
             padded: true,
             expanded: false,
         } );
-        this.content.$element.append(
-            this.filesWidget.$element,
-            addPropertyWidget.$element,
-        );
         this.$body.append( this.content.$element );
     };
     StatementsDialog.prototype.getActionProcess = function ( action ) {
