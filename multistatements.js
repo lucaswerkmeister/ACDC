@@ -13,8 +13,20 @@
         }
         return entityIds;
     }
+
+    async function entityIdsToData( entityIds, props ) {
+        const api = new mw.Api(),
+              allEntityIds = entityIds.slice(), // copy that we can splice without affecting the original
+              entityData = {};
+        let someEntityIds;
+        while ( ( someEntityIds = allEntityIds.splice( 0, 50 ) ).length > 0 ) {
+            const response = await api.get( { action: 'wbgetentities', ids: someEntityIds, props, formatversion: 2 } );
+            Object.assign( entityData, response.entities );
+        }
+        return entityData;
+    }
     
-    const require = await mw.loader.using( [ 'oojs', 'oojs-ui-core', 'oojs-ui-widgets', 'oojs-ui-windows', 'wikibase.mediainfo.statements', 'wikibase.datamodel.Claim', 'mediawiki.api' ] ),
+    const require = await mw.loader.using( [ 'oojs', 'oojs-ui-core', 'oojs-ui-widgets', 'oojs-ui-windows', 'wikibase.mediainfo.statements', 'wikibase.utilities.ClaimGuidGenerator', 'wikibase.datamodel.Statement', 'wikibase.datamodel.Claim', 'wikibase.datamodel.PropertyNoValueSnak', 'wikibase.serialization.StatementListDeserializer', 'mediawiki.api' ] ),
           { StatementWidget, AddPropertyWidget } = require( 'wikibase.mediainfo.statements' );
 
     function failSanityCheck( component ) {
@@ -29,7 +41,20 @@
         }
     }
 
+    function sanityCheckStatementEquals() {
+        const snak = new wikibase.datamodel.PropertyNoValueSnak( 'P1' ),
+              claim1 = new wikibase.datamodel.Claim( snak, null, 'guid 1' ),
+              statement1 = new wikibase.datamodel.Statement( claim1 ),
+              claim2 = new wikibase.datamodel.Claim( snak, null, 'guid 2' ),
+              statement2 = new wikibase.datamodel.Statement( claim2 );
+        if ( !statement1.equals( statement2 ) ) {
+            // if different GUIDs break Statement.equals, we can’t detect duplicate statements
+            failSanityCheck( 'Statement.equals' );
+        }
+    }
+
     sanityCheckStatementWidgetPrototype();
+    sanityCheckStatementEquals();
 
     function StatementsDialog( config ) {
         StatementsDialog.super.call( this, $.extend( {
@@ -85,8 +110,6 @@
             statementWidget.connect( this, { change: 'updateSize' } );
             this.statementWidgets.push( statementWidget );
 
-            statementWidget.getRemovals = () => []; // this widget shall never remove statements
-
             statementWidget.$element.insertBefore( addPropertyWidget.$element );
         } );
         addPropertyWidget.connect( this, { choose: 'updateSize' } );
@@ -107,17 +130,23 @@
         case 'save':
             return new OO.ui.Process( async () => {
                 const titles = this.filesWidget.getItems().map( item => item.getData() ),
-                      entityIds = await titlesToEntityIds( titles );
+                      entityIds = await titlesToEntityIds( titles ),
+                      entityData = await entityIdsToData( entityIds, [ 'info', 'claims' ] ),
+                      deserializer = new wikibase.serialization.StatementListDeserializer();
                 for ( const entityId of entityIds ) {
                     const guidGenerator = new wikibase.utilities.ClaimGuidGenerator( entityId );
                     for ( const statementWidget of this.statementWidgets ) {
-                        for ( const item of statementWidget.items ) {
-                            const statement = item.data,
-                                  oldClaim = statement.getClaim(),
-                                  newClaim = new wb.datamodel.Claim( oldClaim.getMainSnak(), oldClaim.getQualifiers(), guidGenerator.newGuid() );
-                            statement.setClaim( newClaim );
-                        }
-                        await statementWidget.submit( 0 );
+                        const previousStatements = deserializer.deserialize( entityData[ entityId ].statements[ statementWidget.propertyId ] || [] );
+                        statementWidget.getChanges = () => statementWidget.getData().toArray()
+                            .filter( statement => !previousStatements.hasItem( statement ) )
+                            .map( statement => new wikibase.datamodel.Statement(
+                                new wikibase.datamodel.Claim( statement.getClaim().getMainSnak(), statement.getClaim().getQualifiers(), guidGenerator.newGuid() ),
+                                statement.getReferences(),
+                                statement.getRank()
+                            ) );
+                        statementWidget.getRemovals = () => [];
+
+                        await statementWidget.submit( entityData[ entityId ].lastrevid );
                     }
                 }
                 this.close();
