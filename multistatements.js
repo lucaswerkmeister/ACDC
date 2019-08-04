@@ -1,6 +1,21 @@
 ( async function () {
     'use strict';
 
+    const require = await mw.loader.using( [
+        'oojs',
+        'oojs-ui-core',
+        'oojs-ui-widgets',
+        'oojs-ui-windows',
+        'wikibase.mediainfo.statements',
+        'wikibase.utilities.ClaimGuidGenerator',
+        'wikibase.datamodel.Statement',
+        'wikibase.datamodel.Claim',
+        'wikibase.datamodel.PropertyNoValueSnak',
+        'wikibase.serialization.StatementListDeserializer',
+        'mediawiki.api',
+    ] ),
+          { StatementWidget, AddPropertyWidget } = require( 'wikibase.mediainfo.statements' );
+
     async function titlesToEntityIds( titles ) {
         const api = new mw.Api(),
               allTitles = titles.slice(), // copy that we can splice without affecting the original
@@ -26,9 +41,6 @@
         return entityData;
     }
     
-    const require = await mw.loader.using( [ 'oojs', 'oojs-ui-core', 'oojs-ui-widgets', 'oojs-ui-windows', 'wikibase.mediainfo.statements', 'wikibase.utilities.ClaimGuidGenerator', 'wikibase.datamodel.Statement', 'wikibase.datamodel.Claim', 'wikibase.datamodel.PropertyNoValueSnak', 'wikibase.serialization.StatementListDeserializer', 'mediawiki.api' ] ),
-          { StatementWidget, AddPropertyWidget } = require( 'wikibase.mediainfo.statements' );
-
     function failSanityCheck( component ) {
         throw new Error( `${ component } seems to have changed incompatibly, this script must be updated before it can be safely used!` );
     }
