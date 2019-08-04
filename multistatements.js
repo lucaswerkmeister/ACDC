@@ -126,6 +126,7 @@
     OO.inheritClass( FilesWidget, OO.ui.TagMultiselectWidget );
     FilesWidget.prototype.addTagFromInput = function () {
         const titles = this.input.getValue().split( '|' )
+              .filter( s => s ) // filter out empty strings
               .map( title => ensureFileNamespace( title.trim() ) );
         this.clearInput();
 
