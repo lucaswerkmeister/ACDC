@@ -149,6 +149,8 @@
             expanded: false,
         } );
         this.$body.append( this.content.$element );
+
+        setTimeout( () => filesField.fieldWidget.updateInputSize(), 0 ); // TODO probably move most/all of this to getSetupProcess()?
     };
     StatementsDialog.prototype.getActionProcess = function ( action ) {
         switch ( action ) {
