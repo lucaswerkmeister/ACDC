@@ -172,16 +172,31 @@
     StatementsProgressBarWidget.prototype.enable = function ( numberEntities, numberStatementsPerEntity ) {
         this.numberEntities = numberEntities;
         this.numberStatementsPerEntity = numberStatementsPerEntity;
+        this.totalQueryCalls = Math.ceil( numberEntities / 50 );
+        this.totalGetEntitiesCalls = Math.ceil( numberEntities / 50 );
+        this.totalApiCalls = this.totalQueryCalls + this.totalGetEntitiesCalls + this.numberEntities * this.numberStatementsPerEntity;
+        this.loadedEntityIds = false;
+        this.loadedEntityData = false;
         this.indexEntity = 0;
         this.indexStatement = 0;
         this.toggle( true );
     };
     StatementsProgressBarWidget.prototype.updateProgress = function () {
         this.setProgress(
-            ( this.indexEntity * this.numberStatementsPerEntity + this.indexStatement )
-                / ( this.numberEntities * this.numberStatementsPerEntity )
-                * 100
+            100 * ( ( this.loadedEntityIds ? this.totalQueryCalls : 0 ) +
+                    ( this.loadedEntityData ? this.totalGetEntitiesCalls : 0 ) +
+                    this.indexEntity * this.numberStatementsPerEntity +
+                    this.indexStatement
+                  ) / this.totalApiCalls
         );
+    };
+    StatementsProgressBarWidget.prototype.finishedLoadingEntityIds = function () {
+        this.loadedEntityIds = true;
+        this.updateProgress();
+    };
+    StatementsProgressBarWidget.prototype.finishedLoadingEntityData = function () {
+        this.loadedEntityData = true;
+        this.updateProgress();
     };
     StatementsProgressBarWidget.prototype.finishedStatements = function ( numberStatements ) {
         this.indexStatement += numberStatements;
@@ -283,17 +298,19 @@
         switch ( action ) {
         case 'save':
             return new OO.ui.Process( async () => {
-                this.statementsProgressBarWidget.toggle( true ); // TODO this duplicates enable() below; that should already account for the two awaits in between as some progress
-                const titles = this.filesWidget.getTitles(),
-                      entityIds = await titlesToEntityIds( titles ),
-                      entityData = await entityIdsToData( entityIds, [ 'info', 'claims' ] ),
-                      deserializer = new wikibase.serialization.StatementListDeserializer();
-
+                const titles = this.filesWidget.getTitles();
                 this.statementsProgressBarWidget.enable(
-                    entityIds.length,
+                    titles.length,
                     this.statementWidgets.reduce( ( acc, statementWidget ) => acc + statementWidget.getData().length, 0 ),
                 );
 
+                const entityIds = await titlesToEntityIds( titles );
+                this.statementsProgressBarWidget.finishedLoadingEntityIds();
+
+                const entityData = await entityIdsToData( entityIds, [ 'info', 'claims' ] );
+                this.statementsProgressBarWidget.finishedLoadingEntityData();
+
+                const deserializer = new wikibase.serialization.StatementListDeserializer();
                 for ( const entityId of entityIds ) {
                     const guidGenerator = new wikibase.utilities.ClaimGuidGenerator( entityId );
 
@@ -319,6 +336,8 @@
                 }
 
                 this.statementsProgressBarWidget.finished();
+                // leave the dialog open for a second so the user has a chance to see the finished progress bar
+                await new Promise( ( resolve, reject ) => setTimeout( resolve, 1000 ) );
                 this.close();
             }, this );
         default:
