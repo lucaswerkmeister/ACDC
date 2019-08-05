@@ -162,6 +162,40 @@
         return this.getItems().map( item => item.getData() );
     };
 
+    function StatementsProgressBarWidget( config ) {
+        StatementsProgressBarWidget.super.call( this, $.extend( {
+            progress: 0,
+        }, config ) );
+        this.toggle( false );
+    }
+    OO.inheritClass( StatementsProgressBarWidget, OO.ui.ProgressBarWidget );
+    StatementsProgressBarWidget.prototype.enable = function ( numberEntities, numberStatementsPerEntity ) {
+        this.numberEntities = numberEntities;
+        this.numberStatementsPerEntity = numberStatementsPerEntity;
+        this.indexEntity = 0;
+        this.indexStatement = 0;
+        this.toggle( true );
+    };
+    StatementsProgressBarWidget.prototype.updateProgress = function () {
+        this.setProgress(
+            ( this.indexEntity * this.numberStatementsPerEntity + this.indexStatement )
+                / ( this.numberEntities * this.numberStatementsPerEntity )
+                * 100
+        );
+    };
+    StatementsProgressBarWidget.prototype.finishedStatements = function ( numberStatements ) {
+        this.indexStatement += numberStatements;
+        this.updateProgress();
+    };
+    StatementsProgressBarWidget.prototype.finishedEntity = function () {
+        this.indexEntity++;
+        this.indexStatement = 0;
+        this.updateProgress();
+    };
+    StatementsProgressBarWidget.prototype.finished = function () {
+        this.setProgress( 100 );
+    };
+
     function StatementsDialog( config ) {
         StatementsDialog.super.call( this, $.extend( {
             size: 'large',
@@ -236,11 +270,8 @@
         } );
         this.$body.append( this.content.$element );
 
-        this.progressBarWidget = new OO.ui.ProgressBarWidget( {
-            progress: 0,
-        } );
-        this.progressBarWidget.toggle( false ); // only made visible on publish
-        this.$head.append( this.progressBarWidget.$element );
+        this.statementsProgressBarWidget = new StatementsProgressBarWidget( {} );
+        this.$head.append( this.statementsProgressBarWidget.$element );
     };
     StatementsDialog.prototype.getReadyProcess = function ( data ) {
         return StatementsDialog.super.prototype.getReadyProcess.call( this, data ).next( async () => {
@@ -252,24 +283,21 @@
         switch ( action ) {
         case 'save':
             return new OO.ui.Process( async () => {
-                this.progressBarWidget.toggle( true );
-
+                this.statementsProgressBarWidget.toggle( true ); // TODO this duplicates enable() below; that should already account for the two awaits in between as some progress
                 const titles = this.filesWidget.getTitles(),
                       entityIds = await titlesToEntityIds( titles ),
                       entityData = await entityIdsToData( entityIds, [ 'info', 'claims' ] ),
-                      deserializer = new wikibase.serialization.StatementListDeserializer(),
-                      numberEntities = entityIds.length,
-                      numberStatementsPerEntity = this.statementWidgets.reduce( ( acc, statementWidget ) => acc + statementWidget.getData().length, 0 );
-                let indexEntity = 0;
+                      deserializer = new wikibase.serialization.StatementListDeserializer();
+
+                this.statementsProgressBarWidget.enable(
+                    entityIds.length,
+                    this.statementWidgets.reduce( ( acc, statementWidget ) => acc + statementWidget.getData().length, 0 ),
+                );
 
                 for ( const entityId of entityIds ) {
-                    let indexStatement = 0;
                     const guidGenerator = new wikibase.utilities.ClaimGuidGenerator( entityId );
 
                     for ( const statementWidget of this.statementWidgets ) {
-                        const progress = ( indexEntity * numberStatementsPerEntity + indexStatement ) / ( numberEntities * numberStatementsPerEntity ) * 100
-                        this.progressBarWidget.setProgress( progress );
-
                         const previousStatements = deserializer.deserialize( entityData[ entityId ].statements[ statementWidget.propertyId ] || [] );
                         statementWidget.getChanges = () => statementWidget.getData().toArray()
                             .filter( statement => !previousStatements.hasItem( statement ) )
@@ -282,13 +310,15 @@
 
                         await statementWidget.submit( entityData[ entityId ].lastrevid );
 
-                        indexStatement += statementWidget.getData().length; // for the progress, we also count statements that didn’t change
+                        this.statementsProgressBarWidget.finishedStatements (
+                            statementWidget.getData().length // for the progress, we also count statements that didn’t change
+                        );
                     }
 
-                    indexEntity++;
+                    this.statementsProgressBarWidget.finishedEntity();
                 }
 
-                this.progressBarWidget.setProgress( 100 );
+                this.statementsProgressBarWidget.finished();
                 this.close();
             }, this );
         default:
