@@ -13,6 +13,7 @@
         'wikibase.datamodel.PropertyNoValueSnak',
         'wikibase.serialization.StatementListDeserializer',
         'mediawiki.api',
+        'mediawiki.util',
     ] ),
           { StatementWidget, AddPropertyWidget } = require( 'wikibase.mediainfo.statements' );
 
@@ -217,7 +218,7 @@
         }, config ) );
     }
     OO.inheritClass( StatementsDialog, OO.ui.ProcessDialog );
-    StatementsDialog.static.name = 'statements';
+    StatementsDialog.static.name = 'multiStatements';
     StatementsDialog.static.title = 'MultiStatements';
     StatementsDialog.static.actions = [
         {
@@ -362,9 +363,16 @@
             50; // not sure why a bit of extra space is necessary :/
     };
 
-    const windowManager = new OO.ui.WindowManager(),
-          statementsDialog = new StatementsDialog( {} );
+    const factory = new OO.Factory();
+    factory.register( StatementsDialog );
+
+    const windowManager = new OO.ui.WindowManager( { factory } );
     $( document.body ).append( windowManager.$element );
-    windowManager.addWindows( [ statementsDialog ] );
-    windowManager.openWindow( statementsDialog );
+
+    const portletLink = mw.util.addPortletLink( 'p-tb', '', 'MultiStatements', 't-multistatements' ),
+          $portletLink = $( portletLink );
+    $portletLink.on( 'click', () => {
+        windowManager.openWindow( 'multiStatements' );
+        return false;
+    } );
 } )( mediaWiki, jQuery );
