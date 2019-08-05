@@ -235,6 +235,12 @@
             expanded: false,
         } );
         this.$body.append( this.content.$element );
+
+        this.progressBarWidget = new OO.ui.ProgressBarWidget( {
+            progress: 0,
+        } );
+        this.progressBarWidget.toggle( false ); // only made visible on publish
+        this.$head.append( this.progressBarWidget.$element );
     };
     StatementsDialog.prototype.getReadyProcess = function ( data ) {
         return StatementsDialog.super.prototype.getReadyProcess.call( this, data ).next( async () => {
@@ -246,13 +252,24 @@
         switch ( action ) {
         case 'save':
             return new OO.ui.Process( async () => {
+                this.progressBarWidget.toggle( true );
+
                 const titles = this.filesWidget.getTitles(),
                       entityIds = await titlesToEntityIds( titles ),
                       entityData = await entityIdsToData( entityIds, [ 'info', 'claims' ] ),
-                      deserializer = new wikibase.serialization.StatementListDeserializer();
+                      deserializer = new wikibase.serialization.StatementListDeserializer(),
+                      numberEntities = entityIds.length,
+                      numberStatementsPerEntity = this.statementWidgets.reduce( ( acc, statementWidget ) => acc + statementWidget.getData().length, 0 );
+                let indexEntity = 0;
+
                 for ( const entityId of entityIds ) {
+                    let indexStatement = 0;
                     const guidGenerator = new wikibase.utilities.ClaimGuidGenerator( entityId );
+
                     for ( const statementWidget of this.statementWidgets ) {
+                        const progress = ( indexEntity * numberStatementsPerEntity + indexStatement ) / ( numberEntities * numberStatementsPerEntity ) * 100
+                        this.progressBarWidget.setProgress( progress );
+
                         const previousStatements = deserializer.deserialize( entityData[ entityId ].statements[ statementWidget.propertyId ] || [] );
                         statementWidget.getChanges = () => statementWidget.getData().toArray()
                             .filter( statement => !previousStatements.hasItem( statement ) )
@@ -264,8 +281,14 @@
                         statementWidget.getRemovals = () => [];
 
                         await statementWidget.submit( entityData[ entityId ].lastrevid );
+
+                        indexStatement += statementWidget.getData().length; // for the progress, we also count statements that didn’t change
                     }
+
+                    indexEntity++;
                 }
+
+                this.progressBarWidget.setProgress( 100 );
                 this.close();
             }, this );
         default:
