@@ -218,8 +218,8 @@
         }, config ) );
     }
     OO.inheritClass( StatementsDialog, OO.ui.ProcessDialog );
-    StatementsDialog.static.name = 'multiStatements';
-    StatementsDialog.static.title = 'MultiStatements';
+    StatementsDialog.static.name = 'statements';
+    StatementsDialog.static.title = 'Add to Commons / Descriptive Claims';
     StatementsDialog.static.actions = [
         {
             action: 'save',
@@ -288,6 +288,11 @@
 
         this.statementsProgressBarWidget = new StatementsProgressBarWidget( {} );
         this.$head.append( this.statementsProgressBarWidget.$element );
+    };
+    StatementsDialog.prototype.getSetupProcess = function ( data ) {
+        return StatementsDialog.super.prototype.getSetupProcess.call( this, data ).next( async () => {
+            this.title.setLabel( 'AC/DC' );
+        } );
     };
     StatementsDialog.prototype.getReadyProcess = function ( data ) {
         return StatementsDialog.super.prototype.getReadyProcess.call( this, data ).next( async () => {
@@ -369,10 +374,10 @@
     const windowManager = new OO.ui.WindowManager( { factory } );
     $( document.body ).append( windowManager.$element );
 
-    const portletLink = mw.util.addPortletLink( 'p-tb', '', 'MultiStatements', 't-multistatements' ),
+    const portletLink = mw.util.addPortletLink( 'p-tb', '', 'AC/DC', 't-acdc' ),
           $portletLink = $( portletLink );
     $portletLink.on( 'click', () => {
-        windowManager.openWindow( 'multiStatements' );
+        windowManager.openWindow( 'statements' );
         return false;
     } );
 } )( mediaWiki, jQuery );
