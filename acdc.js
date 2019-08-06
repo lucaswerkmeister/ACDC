@@ -251,6 +251,7 @@
         this.filesWidget.connect( this, { change: 'updateCanSave' } );
         this.filesWidget.connect( this, { change: 'updateSize' } );
 
+        this.hasDuplicateStatementsPerProperty = {};
         this.statementWidgets = [];
         const addPropertyWidget = new AddPropertyWidget( {
             $overlay: this.$overlay,
@@ -265,6 +266,31 @@
             } );
             statementWidget.connect( this, { change: 'updateCanSave' } );
             statementWidget.connect( this, { change: 'updateSize' } );
+            statementWidget.on( 'change', () => {
+                // check if there are any duplicate statements for this property
+                this.hasDuplicateStatementsPerProperty[ id ] = false;
+                const itemWidgets = statementWidget.getItems();
+
+                for ( const itemWidget of itemWidgets ) {
+                    itemWidget.$element.css( 'border-left', 'none' );
+                }
+
+                // this is O(n²) but for small n
+                for ( let i = 0; i < itemWidgets.length; i++ ) {
+                    const itemWidget1 = itemWidgets[ i ];
+                    for ( let j = i + 1; j < itemWidgets.length; j++ ) {
+                        const itemWidget2 = itemWidgets[ j ];
+                        if ( itemWidget1.getData().getClaim().getMainSnak().equals( itemWidget2.getData().getClaim().getMainSnak() ) ) {
+                            this.hasDuplicateStatementsPerProperty[ id ] = true;
+                            itemWidget1.$element.css( 'border-left', '2px solid red' ); // TODO better way to indicate errors
+                            itemWidget2.$element.css( 'border-left', '2px solid red' );
+                        }
+                    }
+                }
+
+                this.updateShowDuplicateStatementsError();
+                this.updateCanSave();
+            } );
             this.statementWidgets.push( statementWidget );
 
             statementWidget.$element.insertBefore( addPropertyWidget.$element );
@@ -297,6 +323,17 @@
 
         this.statementsProgressBarWidget = new StatementsProgressBarWidget( {} );
         this.$head.append( this.statementsProgressBarWidget.$element );
+
+        this.duplicateStatementsError = new OO.ui.MessageWidget( {
+            type: 'error',
+            label: 'You specified multiple statements with the same main value, ' +
+                'which is not supported. ' +
+                'If you need to make multiple changes to one statement, merge them. ' +
+                'If you really need to add multiple statements with the same value, ' +
+                'you’ll have to find another way (sorry).', // TODO i18n
+        } );
+        this.duplicateStatementsError.toggle( false ); // see updateShowDuplicateStatementsError
+        this.$foot.append( this.duplicateStatementsError.$element );
     };
     StatementsDialog.prototype.getSetupProcess = function ( data ) {
         return StatementsDialog.super.prototype.getSetupProcess.call( this, data ).next( async () => {
@@ -359,12 +396,19 @@
             return StatementsDialog.super.prototype.getActionProcess.call( this, action );
         }
     };
+    StatementsDialog.prototype.hasDuplicateStatements = function () {
+        return Object.values( this.hasDuplicateStatementsPerProperty ).some( b => b );
+    };
     StatementsDialog.prototype.updateCanSave = function () {
         this.actions.setAbilities( {
             save: this.filesWidget.getTitles().length &&
                 this.statementWidgets.some(
-                    statementWidget => statementWidget.getData().length ),
+                    statementWidget => statementWidget.getData().length ) &&
+                !this.hasDuplicateStatements(),
         } );
+    };
+    StatementsDialog.prototype.updateShowDuplicateStatementsError = function () {
+        this.duplicateStatementsError.toggle( this.hasDuplicateStatements() );
     };
     StatementsDialog.prototype.getBodyHeight = function () {
         // we ceil the body height to the next multiple of 200 so it doesn’t change too often
