@@ -85,6 +85,7 @@
             showPendingRequest: false,
             $container: this.$input, // the default is this.$element, which in a non-'outline' TagMultiselectWidget is never attached to the DOM, so the lookup can’t position itself relative to it
         }, config ) );
+        this.skippedFiles = config.skippedFiles || [];
         this.lookupMenu.connect( this, { choose: [ 'emit', 'select' ] } );
         this.$input.on( 'paste', ( { originalEvent: clipboardEvent } ) => {
             const value = clipboardEvent.clipboardData.getData( 'text' )
@@ -101,6 +102,9 @@
     }
     OO.inheritClass( FileInputWidget, OO.ui.TextInputWidget );
     OO.mixinClass( FileInputWidget, OO.ui.mixin.LookupElement );
+    FileInputWidget.prototype.setSkippedFiles = function ( skippedFiles ) {
+        this.skippedFiles = skippedFiles;
+    };
     FileInputWidget.prototype.getLookupRequest = function () {
         let prefix = this.getValue();
         if ( !prefix || prefix.indexOf( '|' ) !== -1 ) {
@@ -121,11 +125,13 @@
         return response.query.search.map( result => result.title );
     };
     FileInputWidget.prototype.getLookupMenuOptionsFromData = function ( titles ) {
-        return titles.map( title => {
-            return new OO.ui.MenuOptionWidget( {
-                data: title,
-                label: title,
-            } );
+        return titles
+            .filter( title => !this.skippedFiles.includes( title ) )
+            .map( title => {
+                return new OO.ui.MenuOptionWidget( {
+                    data: title,
+                    label: title,
+                } );
         } );
     };
 
@@ -137,6 +143,9 @@
             }, config ) ),
         }, config ) );
         this.input.connect( this, { select: 'addTagFromInput' } );
+        this.on( 'change', () => {
+            this.input.setSkippedFiles( this.getTitles() );
+        } );
     }
     OO.inheritClass( FilesWidget, OO.ui.TagMultiselectWidget );
     FilesWidget.prototype.addTagFromInput = function () {
