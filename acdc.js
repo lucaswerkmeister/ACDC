@@ -12,6 +12,8 @@
         'wikibase.datamodel.Claim',
         'wikibase.datamodel.PropertyNoValueSnak',
         'wikibase.serialization.StatementListDeserializer',
+        'wikibase.serialization.StatementSerializer',
+        'wikibase.serialization.StatementDeserializer',
         'mediawiki.api',
         'mediawiki.util',
     ] ),
@@ -362,19 +364,47 @@
                 const entityData = await entityIdsToData( entityIds, [ 'info', 'claims' ] );
                 this.statementsProgressBarWidget.finishedLoadingEntityData();
 
-                const deserializer = new wikibase.serialization.StatementListDeserializer();
+                const statementListDeserializer = new wikibase.serialization.StatementListDeserializer(),
+                      statementSerializer = new wikibase.serialization.StatementSerializer(),
+                      statementDeserializer = new wikibase.serialization.StatementDeserializer();
                 for ( const entityId of entityIds ) {
                     const guidGenerator = new wikibase.utilities.ClaimGuidGenerator( entityId );
 
                     for ( const statementWidget of this.statementWidgets ) {
-                        const previousStatements = deserializer.deserialize( entityData[ entityId ].statements[ statementWidget.propertyId ] || [] );
+                        const previousStatements = statementListDeserializer.deserialize(
+                            entityData[ entityId ].statements[ statementWidget.propertyId ] || [] );
                         statementWidget.getChanges = () => statementWidget.getData().toArray()
-                            .filter( statement => !previousStatements.hasItem( statement ) )
-                            .map( statement => new wikibase.datamodel.Statement(
-                                new wikibase.datamodel.Claim( statement.getClaim().getMainSnak(), statement.getClaim().getQualifiers(), guidGenerator.newGuid() ),
-                                statement.getReferences(),
-                                statement.getRank()
-                            ) );
+                            .flatMap( newStatement => {
+                                for ( const previousStatement of previousStatements.toArray() ) {
+                                    if ( newStatement.getClaim().getMainSnak().equals( previousStatement.getClaim().getMainSnak() ) ) {
+                                        // main value matches
+                                        if ( newStatement.equals( previousStatement ) ) {
+                                            // full match, do nothing
+                                            return [];
+                                        } else {
+                                            // potentially add qualifiers to existing statement (on a copy)
+                                            // TODO we don’t support references here yet (but neither does WikibaseMediaInfo as of writing this)
+                                            const updatedStatement = statementDeserializer.deserialize(
+                                                statementSerializer.serialize( previousStatement ) );
+                                            updatedStatement.getClaim().getQualifiers().merge( newStatement.getClaim().getQualifiers() );
+                                            if ( updatedStatement.equals( previousStatement ) ) {
+                                                // this is possible if the previous statement had all the qualifiers of the newStatement
+                                                // plus some extra ones; in this case, do nothing
+                                                return [];
+                                            } else {
+                                                // adding some qualifiers
+                                                return [ updatedStatement ];
+                                            }
+                                        }
+                                    }
+                                }
+                                // no existing statement matched, add new
+                                return [ new wikibase.datamodel.Statement(
+                                    new wikibase.datamodel.Claim( newStatement.getClaim().getMainSnak(), newStatement.getClaim().getQualifiers(), guidGenerator.newGuid() ),
+                                    newStatement.getReferences(),
+                                    newStatement.getRank()
+                                ) ];
+                            } );
                         statementWidget.getRemovals = () => [];
 
                         await statementWidget.submit( entityData[ entityId ].lastrevid );
