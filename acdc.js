@@ -1,3 +1,14 @@
+/**
+ * Add to Commons / Descriptive Statements (ACDC)
+ *
+ * User script to add a collection of statements to a set of files.
+ *
+ * Documentation: [[User:Lucas Werkmeister/ACDC]] (https://commons.wikimedia.org/wiki/User:Lucas_Werkmeister/ACDC)
+ *
+ * common.js snippet:
+ *
+ *     mw.loader.load( 'https://commons.wikimedia.org/w/index.php?title=User:Lucas_Werkmeister/ACDC.js&action=raw&ctype=text/javascript' );
+ */
 ( async function ( mw, $ ) {
     'use strict';
 
