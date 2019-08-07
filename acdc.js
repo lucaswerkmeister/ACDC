@@ -41,6 +41,12 @@
             const response = await api.get( { action: 'wbgetentities', ids: someEntityIds, props, formatversion: 2 } );
             Object.assign( entityData, response.entities );
         }
+        for ( const data of Object.values( entityData ) ) {
+            if ( 'missing' in data ) {
+                // treat missing entities (i. e. no structured data yet) as having empty statements
+                data.statements = {};
+            }
+        }
         return entityData;
     }
     
