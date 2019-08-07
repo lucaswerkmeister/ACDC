@@ -1,5 +1,5 @@
 /**
- * Add to Commons / Descriptive Statements (ACDC)
+ * Add to Commons / Descriptive Claims (ACDC)
  *
  * User script to add a collection of statements to a set of files.
  *
