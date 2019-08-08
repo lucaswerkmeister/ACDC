@@ -12,6 +12,12 @@
 ( async function ( mw, $ ) {
     'use strict';
 
+    if ( Array.prototype.flatMap === undefined ) {
+        Array.prototype.flatMap = function ( callback, thisArg ) {
+            return [].concat( ...this.map( callback, thisArg ) );
+        };
+    }
+
     const require = await mw.loader.using( [
         'oojs',
         'oojs-ui-core',
