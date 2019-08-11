@@ -9,5 +9,10 @@ See the [on-wiki documentation](https://commons.wikimedia.org/wiki/User:Lucas_We
 As this script is published on Wikimedia Commons,
 it falls under the Creative Commons Attribution-ShareAlike 3.0 Unported license
 ([CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/)).
-I’m open to publishing it under additional licenses as well,
-though to be honest I’m not sure what other licenses make sense combined with that one.
+Additionally, I place it under the Creative Commons Attribution-ShareAlike 4.0 International license
+([CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)),
+and I’m open to publishing it under other free licenses too.
+
+If you contribute to this script,
+you agree to release your contributions under the same licenses,
+and I may contact you in the future to request additional licenses.
