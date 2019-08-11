@@ -8,6 +8,9 @@
  * common.js snippet:
  *
  *     mw.loader.load( 'https://commons.wikimedia.org/w/index.php?title=User:Lucas_Werkmeister/ACDC.js&action=raw&ctype=text/javascript' );
+ *
+ * Development happens on GitHub: https://github.com/lucaswerkmeister/ACDC –
+ * please do not edit this page directly.
  */
 ( async function ( mw, $ ) {
 	'use strict';
