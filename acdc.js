@@ -131,7 +131,7 @@
 		this.skippedFiles = skippedFiles;
 	};
 	FileInputWidget.prototype.getLookupRequest = function () {
-		let prefix = this.getValue();
+		const prefix = this.getValue();
 		if ( !prefix || prefix.indexOf( '|' ) !== -1 ) {
 			return $.Deferred().resolve( [] ).promise();
 		}
