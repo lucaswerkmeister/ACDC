@@ -1,0 +1,32 @@
+{
+  "name": "acdc",
+  "version": "0.1.0",
+  "description": "Wikimedia Commons user script to add a collection of structured data statements to a set of media files.",
+  "main": "acdc.js",
+  "dependencies": {},
+  "devDependencies": {
+    "eslint": "^6.1.0",
+    "eslint-config-wikimedia": "^0.13.1"
+  },
+  "scripts": {
+    "test": "npm run lint",
+    "lint": "eslint .",
+    "fix": "eslint --fix ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lucaswerkmeister/ACDC.git"
+  },
+  "keywords": [
+    "Wikimedia Commons",
+    "user script",
+    "structured data",
+    "OOUI"
+  ],
+  "author": "Lucas Werkmeister",
+  "license": "CC-BY-SA-3.0",
+  "bugs": {
+    "url": "https://github.com/lucaswerkmeister/ACDC/issues"
+  },
+  "homepage": "https://commons.wikimedia.org/wiki/User:Lucas_Werkmeister/ACDC"
+}
