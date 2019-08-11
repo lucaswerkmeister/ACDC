@@ -444,7 +444,7 @@
 
 					this.statementsProgressBarWidget.finished();
 					// leave the dialog open for a second so the user has a chance to see the finished progress bar
-					await new Promise( ( resolve, reject ) => setTimeout( resolve, 1000 ) );
+					await new Promise( resolve => setTimeout( resolve, 1000 ) );
 					this.close();
 				} )() ).promise() );
 			default:
