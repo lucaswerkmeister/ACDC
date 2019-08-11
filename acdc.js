@@ -486,4 +486,4 @@
 		windowManager.openWindow( 'statements' );
 		return false;
 	} );
-} )( mediaWiki, jQuery );
+}( mediaWiki, jQuery ) );
