@@ -13,9 +13,11 @@
 	'use strict';
 
 	if ( Array.prototype.flatMap === undefined ) {
-		Array.prototype.flatMap = function ( callback, thisArg ) {
-			return [].concat( ...this.map( callback, thisArg ) );
-		};
+		Object.defineProperty( Array.prototype, 'flatMap', {
+			value: function ( callback, thisArg ) {
+				return [].concat( ...this.map( callback, thisArg ) );
+			},
+		} );
 	}
 
 	const require = await mw.loader.using( [
