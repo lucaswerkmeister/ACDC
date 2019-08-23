@@ -28,6 +28,8 @@
 			'oojs-ui-core',
 			'oojs-ui-widgets',
 			'oojs-ui-windows',
+			'oojs-ui.styles.icons-interactions',
+			'oojs-ui.styles.icons-editing-list',
 			'wikibase.mediainfo.statements',
 			'wikibase.utilities.ClaimGuidGenerator',
 			'wikibase.datamodel.Statement',
@@ -171,10 +173,81 @@
 			inputWidget: new FileInputWidget( $.extend( {
 				placeholder: 'File:Example.png | File:Example.jpg',
 			}, config ) ),
+			icon: 'ellipsis',
 		}, config ) );
 		this.input.connect( this, { select: 'addTagFromInput' } );
 		this.on( 'change', () => {
 			this.input.setSkippedFiles( this.getTitles() );
+		} );
+
+		this.$overlay = ( config.$overlay === true ? OO.ui.getDefaultOverlay() : config.$overlay ) || this.$elemnt;
+
+		// we turn the ellipsis icon into a “button” opening a popup menu with currently one button
+		this.pagePileButton = new OO.ui.ButtonWidget( {
+			icon: 'listBullet',
+			label: 'Load PagePile',
+		} );
+		this.menuPopup = new OO.ui.PopupWidget( {
+			$content: new OO.ui.StackLayout( {
+				items: [
+					new OO.ui.PanelLayout( {
+						$content: this.pagePileButton.$element,
+						expanded: false,
+					} ),
+				],
+				continuous: true,
+				expanded: false,
+			} ).$element,
+			$floatableContainer: this.$icon,
+			align: 'forwards',
+			autoClose: true,
+			$autoCloseIgnore: this.$icon, // click on $icon closes via toggle() below instead
+			$overlay: this.$overlay,
+			width: null, // use automatic width
+			padded: false,
+		} );
+		this.$overlay.append( this.menuPopup.$element );
+		this.$icon.css( { cursor: 'pointer' } );
+		this.$icon.on( 'click', () => this.menuPopup.toggle() );
+		// TODO this is not very accessible :/
+		// but we don’t have many options – we can’t add other elements around the $icon,
+		// or the TagMultiselectWidget’s layout breaks
+
+		this.pagePileButton.on( 'click', async () => {
+			this.menuPopup.toggle( false );
+			const pagePileId = await OO.ui.prompt( 'PagePile ID:', {
+				textInput: {
+					placeholder: '12345',
+					type: 'number',
+				},
+			} );
+			if ( !pagePileId ) {
+				// user clicked “cancel”, nothing to do
+				return;
+			}
+
+			const pileJson = await fetch(
+				`https://tools.wmflabs.org/pagepile/api.php?action=get_data&id=${pagePileId}&format=json`
+			).then( r => r.json() );
+			if ( pileJson.wiki !== mw.config.get( 'wgDBname' ) ) {
+				return OO.ui.alert( 'That PagePile does not belong to this wiki!' );
+			}
+			const files = pileJson.pages
+				.filter( page => page.startsWith( 'File:' ) );
+			if ( files.length >= 100 ) {
+				const confirmation = await OO.ui.confirm(
+					`This PagePile contains ${files.length} files, using it will take a while. Are you sure?` );
+				if ( !confirmation ) {
+					return;
+				}
+			}
+			for ( const file of files ) {
+				this.addTag( file );
+				// sleep for a tiny bit between each file to give the browser time to update the UI –
+				// otherwise it completely freezes until all files are added,
+				// and I think a slight slowdown is preferable over that
+				await new Promise( resolve => setTimeout( resolve, 1 ) );
+			}
 		} );
 	}
 	OO.inheritClass( FilesWidget, OO.ui.TagMultiselectWidget );
