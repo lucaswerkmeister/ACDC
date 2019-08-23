@@ -109,6 +109,22 @@
 		}
 	}
 
+	/**
+	 * FileInputWidget is an input widget for files on the local wiki.
+	 * File names are looked up as soon as the user begins typing,
+	 * and suggested accordingly.
+	 * When text is pasted into the input,
+	 * newline and tab characters are replaced with pipe characters,
+	 * for integration with FilesWidget.
+	 *
+	 * @class
+	 * @extends OO.ui.TextInputWidget
+	 * @mixins OO.ui.mixin.LookupElement
+	 *
+	 * @constructor
+	 * @param {Object} [config] Configuration options
+	 * @cfg {string[]} [skippedFiles] Don’t suggest these files in the lookup.
+	 */
 	function FileInputWidget( config ) {
 		FileInputWidget.super.call( this, $.extend( {
 			placeholder: 'File:Example.png',
@@ -167,6 +183,21 @@
 			} );
 	};
 
+	/**
+	 * FilesWidget is an input widget for a collection of files on the local wiki.
+	 * A FileInputWidget is used for the input,
+	 * and the input is split on pipe characters
+	 * to allow adding multiple files at once.
+	 * The File: namespace is automatically added where missing.
+	 * The TagMultiselectWidget’s icon is turned into an icon,
+	 * which opens a menu with a button to load files from a PagePile.
+	 *
+	 * @class
+	 * @extends OO.ui.TagMultiselectWidget
+	 *
+	 * @constructor
+	 * @param {Object} [config] Configuration options
+	 */
 	function FilesWidget( config ) {
 		FilesWidget.super.call( this, $.extend( {
 			allowArbitrary: true,
@@ -275,6 +306,19 @@
 		return this.getItems().map( item => item.getData() );
 	};
 
+	/**
+	 * StatementsProgressBarWidget is a progress bar widget for AC/DC.
+	 * It is initialized with the number of files
+	 * and number of statements to add to each file,
+	 * and updated whenever progress has been made,
+	 * and then calculates the progress itself each time.
+	 *
+	 * @class
+	 * @extends OO.ui.ProgressBarWidget
+	 *
+	 * @constructor
+	 * @param {Object} [config] Configuration options
+	 */
 	function StatementsProgressBarWidget( config ) {
 		StatementsProgressBarWidget.super.call( this, $.extend( {
 			progress: 0,
@@ -324,6 +368,23 @@
 		this.setProgress( 100 );
 	};
 
+	/**
+	 * StatementsDialog is the main dialog of AC/DC.
+	 * It initializes and arranges the other UI elements,
+	 * and performs the edits on publish.
+	 *
+	 * Adding multiple statements for the same property with the same value is disallowed –
+	 * attempting to do so marks the erroneous statements and disables the publish button.
+	 * This is because otherwise, AC/DC updates existing statements with the same value
+	 * (i. e. to add qualifiers),
+	 * so trying to add more than one such statement does not make sense.
+	 *
+	 * @class
+	 * @extends OO.ui.ProcessDialog
+	 *
+	 * @constructor
+	 * @param {Object} [config] Configuration options
+	 */
 	function StatementsDialog( config ) {
 		StatementsDialog.super.call( this, $.extend( {
 			size: 'large',
