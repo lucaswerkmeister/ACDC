@@ -488,7 +488,11 @@
 	const portletLink = mw.util.addPortletLink( 'p-tb', '', 'AC/DC', 't-acdc' ),
 		$portletLink = $( portletLink );
 	$portletLink.on( 'click', () => {
-		windowManager.openWindow( 'statements' );
+		try {
+			windowManager.openWindow( 'statements' );
+		} catch ( e ) {
+			OO.ui.alert( String( e ) );
+		}
 		return false;
 	} );
 }( mediaWiki, jQuery ) );
