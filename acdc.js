@@ -216,7 +216,7 @@
 		// we turn the ellipsis icon into a “button” opening a popup menu with currently one button
 		this.pagePileButton = new OO.ui.ButtonWidget( {
 			icon: 'listBullet',
-			label: 'Load PagePile',
+			label: 'Load PagePile', // TODO i18n
 		} );
 		this.menuPopup = new OO.ui.PopupWidget( {
 			$content: new OO.ui.StackLayout( {
@@ -246,7 +246,7 @@
 
 		this.pagePileButton.on( 'click', async () => {
 			this.menuPopup.toggle( false );
-			const pagePileId = await OO.ui.prompt( 'PagePile ID:', {
+			const pagePileId = await OO.ui.prompt( 'PagePile ID:', { // TODO i18n
 				textInput: {
 					placeholder: '12345',
 					type: 'number',
@@ -261,13 +261,13 @@
 				`https://tools.wmflabs.org/pagepile/api.php?action=get_data&id=${pagePileId}&format=json`
 			).then( r => r.json() );
 			if ( pileJson.wiki !== mw.config.get( 'wgDBname' ) ) {
-				return OO.ui.alert( 'That PagePile does not belong to this wiki!' );
+				return OO.ui.alert( 'That PagePile does not belong to this wiki!' ); // TODO i18n
 			}
 			const files = pileJson.pages
 				.filter( page => page.startsWith( 'File:' ) );
 			if ( files.length >= 100 ) {
 				const confirmation = await OO.ui.confirm(
-					`This PagePile contains ${files.length} files, using it will take a while. Are you sure?` );
+					`This PagePile contains ${files.length} files, using it will take a while. Are you sure?` ); // TODO i18n
 				if ( !confirmation ) {
 					return;
 				}
