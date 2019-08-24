@@ -119,9 +119,14 @@
 					.replace( /[\n\t]/g, ' | ' ),
 				inputElement = this.$input[ 0 ];
 
-			inputElement.setRangeText( value );
-			inputElement.selectionStart += value.length;
-			inputElement.selectionEnd = inputElement.selectionStart;
+			if ( typeof inputElement.setRangeText === 'function' ) {
+				inputElement.setRangeText( value );
+				inputElement.selectionStart += value.length;
+				inputElement.selectionEnd = inputElement.selectionStart;
+			} else {
+				// fallback for incompatible browsers
+				inputElement.value = value;
+			}
 
 			clipboardEvent.preventDefault();
 		} );
