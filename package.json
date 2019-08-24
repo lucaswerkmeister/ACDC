@@ -2,13 +2,21 @@
   "name": "acdc",
   "version": "0.1.0",
   "description": "Wikimedia Commons user script to add a collection of structured data statements to a set of media files.",
-  "main": "acdc.js",
+  "private": "true",
   "dependencies": {},
   "devDependencies": {
+    "@babel/core": "^7.5.5",
+    "@babel/preset-env": "^7.5.5",
+    "babel-loader": "^8.0.6",
+    "core-js": "^3.2.1",
     "eslint": "^6.1.0",
-    "eslint-config-wikimedia": "^0.13.1"
+    "eslint-config-wikimedia": "^0.13.1",
+    "regenerator-runtime": "^0.13.3",
+    "webpack": "^4.39.2",
+    "webpack-cli": "^3.3.7"
   },
   "scripts": {
+    "build": "webpack",
     "test": "npm run lint",
     "lint": "eslint .",
     "fix": "eslint --fix ."

@@ -1,27 +1,5 @@
-/**
- * Add to Commons / Descriptive Claims (ACDC)
- *
- * User script to add a collection of statements to a set of files.
- *
- * Documentation: [[User:Lucas Werkmeister/ACDC]] (https://commons.wikimedia.org/wiki/User:Lucas_Werkmeister/ACDC)
- *
- * common.js snippet:
- *
- *     mw.loader.load( 'https://commons.wikimedia.org/w/index.php?title=User:Lucas_Werkmeister/ACDC.js&action=raw&ctype=text/javascript' );
- *
- * Development happens on GitHub: https://github.com/lucaswerkmeister/ACDC –
- * please do not edit this page directly.
- */
 ( async function ( mw, $ ) {
 	'use strict';
-
-	if ( Array.prototype.flatMap === undefined ) {
-		Object.defineProperty( Array.prototype, 'flatMap', {
-			value: function ( callback, thisArg ) {
-				return [].concat( ...this.map( callback, thisArg ) );
-			},
-		} );
-	}
 
 	const require = await mw.loader.using( [
 			'oojs',
