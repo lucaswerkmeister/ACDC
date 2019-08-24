@@ -637,4 +637,11 @@
 		}
 		return false;
 	} );
+
+	const startupPagePileId = mw.util.getParamValue( 'acdcPagePileId' );
+	if ( startupPagePileId ) {
+		windowManager.openWindow( 'statements' );
+		const statementsDialog = await windowManager.getWindow( 'statements' );
+		await statementsDialog.filesWidget.loadPagePile( startupPagePileId );
+	}
 }( mediaWiki, jQuery ) );
