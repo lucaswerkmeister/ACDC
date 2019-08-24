@@ -257,28 +257,7 @@
 				return;
 			}
 
-			const pileJson = await fetch(
-				`https://tools.wmflabs.org/pagepile/api.php?action=get_data&id=${pagePileId}&format=json`
-			).then( r => r.json() );
-			if ( pileJson.wiki !== mw.config.get( 'wgDBname' ) ) {
-				return OO.ui.alert( 'That PagePile does not belong to this wiki!' ); // TODO i18n
-			}
-			const files = pileJson.pages
-				.filter( page => page.startsWith( 'File:' ) );
-			if ( files.length >= 100 ) {
-				const confirmation = await OO.ui.confirm(
-					`This PagePile contains ${files.length} files, using it will take a while. Are you sure?` ); // TODO i18n
-				if ( !confirmation ) {
-					return;
-				}
-			}
-			for ( const file of files ) {
-				this.addTag( file );
-				// sleep for a tiny bit between each file to give the browser time to update the UI –
-				// otherwise it completely freezes until all files are added,
-				// and I think a slight slowdown is preferable over that
-				await new Promise( resolve => setTimeout( resolve, 1 ) );
-			}
+			await this.loadPagePile( pagePileId );
 		} );
 	}
 	OO.inheritClass( FilesWidget, OO.ui.TagMultiselectWidget );
@@ -301,6 +280,35 @@
 				this.input.setValue( inputValue );
 			}
 		}
+	};
+	FilesWidget.prototype.loadPagePile = async function ( pagePileId ) {
+		const pileJson = await fetch(
+			`https://tools.wmflabs.org/pagepile/api.php?action=get_data&id=${pagePileId}&format=json`
+		).then( r => r.json() );
+		if ( pileJson.wiki !== mw.config.get( 'wgDBname' ) ) {
+			await OO.ui.alert( 'That PagePile does not belong to this wiki!' ); // TODO i18n
+			return false;
+		}
+
+		const files = pileJson.pages
+			.filter( page => page.startsWith( 'File:' ) );
+		if ( files.length >= 100 ) {
+			const confirmation = await OO.ui.confirm(
+				`This PagePile contains ${files.length} files, using it will take a while. Are you sure?` ); // TODO i18n
+			if ( !confirmation ) {
+				return false;
+			}
+		}
+
+		for ( const file of files ) {
+			this.addTag( file );
+			// sleep for a tiny bit between each file to give the browser time to update the UI –
+			// otherwise it completely freezes until all files are added,
+			// and I think a slight slowdown is preferable over that
+			await new Promise( resolve => setTimeout( resolve, 1 ) );
+		}
+
+		return true;
 	};
 	FilesWidget.prototype.getTitles = function () {
 		return this.getItems().map( item => item.getData() );
