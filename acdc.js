@@ -71,6 +71,16 @@
 		} while ( 'continue' in response );
 	}
 
+	/**
+	 * Sleep for a tiny bit, to give the browser time to update the UI.
+	 * Usually called in busy loops that would otherwise block for a while, freezing the browser.
+	 * Calling this may slow down the process a bit, but is much more responsive.
+	 * @return {Promise}
+	 */
+	function microsleep() {
+		return new Promise( resolve => setTimeout( resolve, 1 ) );
+	}
+
 	function failSanityCheck( component ) {
 		throw new Error( `${component} seems to have changed incompatibly, this script must be updated before it can be safely used!` );
 	}
@@ -317,10 +327,7 @@
 	FilesWidget.prototype.loadCategory = async function ( categoryTitle ) {
 		for await ( const file of categoryFiles( categoryTitle ) ) {
 			this.addTag( file );
-			// sleep for a tiny bit between each file to give the browser time to update the UI –
-			// otherwise it completely freezes until all files are added,
-			// and I think a slight slowdown is preferable over that
-			await new Promise( resolve => setTimeout( resolve, 1 ) );
+			await microsleep();
 		}
 	};
 	FilesWidget.prototype.loadPagePile = async function ( pagePileId ) {
@@ -344,10 +351,7 @@
 
 		for ( const file of files ) {
 			this.addTag( file );
-			// sleep for a tiny bit between each file to give the browser time to update the UI –
-			// otherwise it completely freezes until all files are added,
-			// and I think a slight slowdown is preferable over that
-			await new Promise( resolve => setTimeout( resolve, 1 ) );
+			await microsleep();
 		}
 
 		return true;
