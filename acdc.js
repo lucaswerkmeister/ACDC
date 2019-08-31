@@ -52,6 +52,24 @@
 		return entityData;
 	}
 
+	async function* categoryFiles( categoryTitle ) { // eslint-disable-line no-unused-vars
+		const api = new mw.Api(),
+			originalParams = {
+				action: 'query',
+				list: 'categorymembers',
+				cmtitle: categoryTitle,
+				cmprop: [ 'title' ],
+				cmtype: [ 'file' ],
+				cmlimit: 'max',
+				formatversion: 2,
+			};
+		let response = {};
+		do {
+			response = await api.get( Object.assign( {}, originalParams, response.continue ) );
+			yield* response.query.categorymembers.map( member => member.title );
+		} while ( 'continue' in response );
+	}
+
 	function failSanityCheck( component ) {
 		throw new Error( `${component} seems to have changed incompatibly, this script must be updated before it can be safely used!` );
 	}
