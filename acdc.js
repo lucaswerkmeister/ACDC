@@ -7,6 +7,7 @@
 			'oojs-ui-widgets',
 			'oojs-ui-windows',
 			'oojs-ui.styles.icons-interactions',
+			'oojs-ui.styles.icons-content',
 			'oojs-ui.styles.icons-editing-list',
 			'wikibase.mediainfo.statements',
 			'wikibase.utilities.ClaimGuidGenerator',
@@ -52,7 +53,7 @@
 		return entityData;
 	}
 
-	async function* categoryFiles( categoryTitle ) { // eslint-disable-line no-unused-vars
+	async function* categoryFiles( categoryTitle ) {
 		const api = new mw.Api(),
 			originalParams = {
 				action: 'query',
@@ -215,6 +216,10 @@
 		this.$overlay = ( config.$overlay === true ? OO.ui.getDefaultOverlay() : config.$overlay ) || this.$elemnt;
 
 		// we turn the ellipsis icon into a “button” opening a popup menu with currently one button
+		this.categoryButton = new OO.ui.ButtonWidget( {
+			icon: 'tag',
+			label: 'Load category', // TODO i18n
+		} );
 		this.pagePileButton = new OO.ui.ButtonWidget( {
 			icon: 'listBullet',
 			label: 'Load PagePile', // TODO i18n
@@ -222,6 +227,10 @@
 		this.menuPopup = new OO.ui.PopupWidget( {
 			$content: new OO.ui.StackLayout( {
 				items: [
+					new OO.ui.PanelLayout( {
+						$content: this.categoryButton.$element,
+						expanded: false,
+					} ),
 					new OO.ui.PanelLayout( {
 						$content: this.pagePileButton.$element,
 						expanded: false,
@@ -236,7 +245,7 @@
 			$autoCloseIgnore: this.$icon, // click on $icon closes via toggle() below instead
 			$overlay: this.$overlay,
 			width: null, // use automatic width
-			padded: false,
+			padded: true,
 		} );
 		this.$overlay.append( this.menuPopup.$element );
 		this.$icon.css( { cursor: 'pointer' } );
@@ -244,6 +253,29 @@
 		// TODO this is not very accessible :/
 		// but we don’t have many options – we can’t add other elements around the $icon,
 		// or the TagMultiselectWidget’s layout breaks
+
+		this.categoryButton.on( 'click', async () => {
+			this.menuPopup.toggle( false );
+			let categoryTitle = await OO.ui.prompt( 'Category title:', { // TODO i18n
+				textInput: {
+					placeholder: 'Category:Example',
+				},
+			} );
+			if ( !categoryTitle ) {
+				// user clicked “cancel”, nothing to do
+				return;
+			}
+
+			if ( !categoryTitle.startsWith( 'Category:' ) ) {
+				categoryTitle = `Category:${categoryTitle}`;
+			}
+
+			try {
+				await this.loadCategory( categoryTitle );
+			} catch ( e ) {
+				await OO.ui.alert( `Error: ${e}` );
+			}
+		} );
 
 		this.pagePileButton.on( 'click', async () => {
 			this.menuPopup.toggle( false );
@@ -280,6 +312,15 @@
 				inputValue += title;
 				this.input.setValue( inputValue );
 			}
+		}
+	};
+	FilesWidget.prototype.loadCategory = async function ( categoryTitle ) {
+		for await ( const file of categoryFiles( categoryTitle ) ) {
+			this.addTag( file );
+			// sleep for a tiny bit between each file to give the browser time to update the UI –
+			// otherwise it completely freezes until all files are added,
+			// and I think a slight slowdown is preferable over that
+			await new Promise( resolve => setTimeout( resolve, 1 ) );
 		}
 	};
 	FilesWidget.prototype.loadPagePile = async function ( pagePileId ) {
