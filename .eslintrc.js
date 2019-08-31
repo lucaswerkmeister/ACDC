@@ -8,7 +8,7 @@ module.exports = {
     'extends': [
         'wikimedia',
         'wikimedia/jquery',
-        'wikimedia/language/es2017',
+        'wikimedia/language/es2019',
     ],
     'globals': {
         'mediaWiki': 'readable',
