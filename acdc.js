@@ -673,6 +673,10 @@
 	const windowManager = new OO.ui.WindowManager( { factory } );
 	$( document.body ).append( windowManager.$element );
 
+	// ensure default window manager for prompt, alert etc. comes after (i.e. displays above) ours,
+	// even if it had already been created and attached to the DOM earlier
+	OO.ui.getWindowManager().$element.insertAfter( windowManager.$element );
+
 	const portletLink = mw.util.addPortletLink( 'p-tb', '', 'AC/DC', 't-acdc' ),
 		$portletLink = $( portletLink );
 	$portletLink.on( 'click', () => {
