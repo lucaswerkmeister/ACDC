@@ -621,10 +621,13 @@
 		return false;
 	} );
 
-	const startupPagePileId = mw.util.getParamValue( 'acdcPagePileId' );
-	if ( startupPagePileId ) {
+	const startup = mw.util.getParamValue( 'acdcShow' ),
+		startupPagePileId = mw.util.getParamValue( 'acdcPagePileId' );
+	if ( startup || startupPagePileId ) {
 		windowManager.openWindow( 'statements' );
 		const statementsDialog = await windowManager.getWindow( 'statements' );
-		await statementsDialog.filesWidget.loadPagePile( startupPagePileId );
+		if ( startupPagePileId ) {
+			await statementsDialog.filesWidget.loadPagePile( startupPagePileId );
+		}
 	}
 }( mediaWiki, jQuery ) );
