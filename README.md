@@ -1,4 +1,4 @@
-# AC/DC
+# AC/DC [![Build Status](https://travis-ci.com/lucaswerkmeister/ACDC.svg?branch=master)](https://travis-ci.com/lucaswerkmeister/ACDC)
 
 **Add to Commons / Descriptive Claims** is a user script for Wikimedia Commons
 to add a collection of statements to a set of files.
