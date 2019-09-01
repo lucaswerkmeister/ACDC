@@ -82,7 +82,7 @@
 	}
 
 	function failSanityCheck( component ) {
-		throw new Error( `${component} seems to have changed incompatibly, this script must be updated before it can be safely used!` );
+		throw new Error( `${component} seems to have changed incompatibly, AC/DC must be updated before it can be safely used!` );
 	}
 
 	function sanityCheckStatementWidgetPrototype() {
