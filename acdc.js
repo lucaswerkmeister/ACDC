@@ -292,6 +292,7 @@
 			}
 
 			let categoryTitle = await OO.ui.prompt( 'Category title:', { // TODO i18n
+				size: 'medium',
 				textInput: {
 					placeholder: 'Category:Example',
 					value: defaultCategory,
