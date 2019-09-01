@@ -93,6 +93,20 @@
 		}
 	}
 
+	function sanityCheckStatementWidgetPropertyId() {
+		const statementWidget = new StatementWidget( {
+			entityId: '',
+			propertyId: 'P12345',
+			isDefaultProperty: false,
+			properties: { P12345: 'wikibase-entityid' },
+		} );
+		if ( !( 'state' in statementWidget &&
+				statementWidget.state.propertyId === 'P12345' ) ) {
+			// if the property ID is not available, we can’t detect existing statements
+			failSanityCheck( 'StatementWidget.state.propertyId' );
+		}
+	}
+
 	function sanityCheckStatementEquals() {
 		const snak = new wikibase.datamodel.PropertyNoValueSnak( 'P1' ),
 			claim1 = new wikibase.datamodel.Claim( snak, null, 'guid 1' ),
@@ -106,6 +120,7 @@
 	}
 
 	sanityCheckStatementWidgetPrototype();
+	sanityCheckStatementWidgetPropertyId();
 	sanityCheckStatementEquals();
 
 	function ensureFileNamespace( title ) {
