@@ -598,14 +598,20 @@
 												// full match, do nothing
 												return [];
 											} else {
-												// potentially add qualifiers to existing statement (on a copy)
+												// potentially add qualifiers and bump rank (on a copy of the existing statement)
 												// TODO we don’t support references here yet (but neither does WikibaseMediaInfo as of writing this)
 												const updatedStatement = statementDeserializer.deserialize(
 													statementSerializer.serialize( previousStatement ) );
+
 												updatedStatement.getClaim().getQualifiers().merge( newStatement.getClaim().getQualifiers() );
+
+												if ( newStatement.getRank() !== wikibase.datamodel.Statement.RANK.NORMAL &&
+													updatedStatement.getRank() === wikibase.datamodel.Statement.RANK.NORMAL ) {
+													updatedStatement.setRank( newStatement.getRank() );
+												}
+
 												if ( updatedStatement.equals( previousStatement ) ) {
-													// this is possible if the previous statement had all the qualifiers of the newStatement
-													// plus some extra ones; in this case, do nothing
+													// not equal but no change from our side, do nothing
 													return [];
 												} else {
 													// adding some qualifiers
