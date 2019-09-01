@@ -588,7 +588,7 @@
 
 						for ( const statementWidget of this.statementWidgets ) {
 							const previousStatements = statementListDeserializer.deserialize(
-								entityData[ entityId ].statements[ statementWidget.propertyId ] || [] );
+								entityData[ entityId ].statements[ statementWidget.state.propertyId ] || [] );
 							statementWidget.getChanges = () => statementWidget.getData().toArray()
 								.flatMap( newStatement => {
 									for ( const previousStatement of previousStatements.toArray() ) {
