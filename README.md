@@ -4,6 +4,24 @@
 to add a collection of statements to a set of files.
 See the [on-wiki documentation](https://commons.wikimedia.org/wiki/User:Lucas_Werkmeister/ACDC) for more information.
 
+## Development
+
+For local development, I usually load [this page](https://test-commons.wikimedia.org/wiki/Special:BlankPage?acdcShow=1) in Firefox,
+then open the Scratchpad (<kbd><kbd>Shift</kbd>+<kbd>F4</kbd></kbd>), open `acdc.js` and run it (<kbd><kbd>Ctrl</kbd>+<kbd>R</kbd></kbd>).
+After making code changes, I reload the file in Scratchpad
+(it usually remembers the file name, making this as simple as <kbd><kbd>Ctrl</kbd>+<kbd>O</kbd></kbd>, then <kbd><kbd>Enter</kbd></kbd>)
+and run it again.
+(I typically don’t edit in Scratchpad directly.)
+Similar steps should be possible in other browsers –
+they just need to support all the modern JavaScript features AC/DC uses,
+without Babel transpilation or core-js polyfills.
+
+For deployment, run `make all` to build the Commons version of the script,
+copy `dist/main.js` to the clipboard and save that on [`ACDC.js`](https://commons.wikimedia.org/wiki/User:Lucas_Werkmeister/ACDC.js).
+Afterwards, copy the page revision from the “permanent link” in the sidebar
+and tag the current commit as <code>r<var>revid</var></code>,
+then push `master` and that tag to `origin`.
+
 ## License
 
 As this script is published on Wikimedia Commons,
