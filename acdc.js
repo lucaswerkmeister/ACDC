@@ -279,11 +279,22 @@
 		// but we don’t have many options – we can’t add other elements around the $icon,
 		// or the TagMultiselectWidget’s layout breaks
 
+		this.suggestedCurrentCategory = false;
 		this.categoryButton.on( 'click', async () => {
 			this.menuPopup.toggle( false );
+
+			let defaultCategory = mw.config.get( 'wgPageName' )
+				.replace( /_/g, ' ' );
+			if ( defaultCategory.startsWith( 'Category:' ) && !this.suggestedCurrentCategory ) {
+				this.suggestedCurrentCategory = true;
+			} else {
+				defaultCategory = null;
+			}
+
 			let categoryTitle = await OO.ui.prompt( 'Category title:', { // TODO i18n
 				textInput: {
 					placeholder: 'Category:Example',
+					value: defaultCategory,
 				},
 			} );
 			if ( !categoryTitle ) {
