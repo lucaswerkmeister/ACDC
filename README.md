@@ -1,8 +1,8 @@
 # AC/DC [![Build Status](https://travis-ci.com/lucaswerkmeister/ACDC.svg?branch=master)](https://travis-ci.com/lucaswerkmeister/ACDC)
 
-**Add to Commons / Descriptive Claims** is a user script for Wikimedia Commons
+**Add to Commons / Descriptive Claims** is a gadget for Wikimedia Commons
 to add a collection of statements to a set of files.
-See the [on-wiki documentation](https://commons.wikimedia.org/wiki/User:Lucas_Werkmeister/ACDC) for more information.
+See the [on-wiki documentation](https://commons.wikimedia.org/wiki/Help:Gadget-ACDC) for more information.
 
 ## Development
 
@@ -17,7 +17,7 @@ they just need to support all the modern JavaScript features AC/DC uses,
 without Babel transpilation or core-js polyfills.
 
 For deployment, run `make all` to build the Commons version of the script,
-copy `dist/main.js` to the clipboard and save that on [`ACDC.js`](https://commons.wikimedia.org/wiki/User:Lucas_Werkmeister/ACDC.js).
+copy `dist/main.js` to the clipboard and save that on [`MediaWiki:Gadget-ACDC.js`](https://commons.wikimedia.org/wiki/MediaWiki:Gadget-ACDC.js).
 Afterwards, copy the page revision from the “permanent link” in the sidebar
 and tag the current commit as <code>r<var>revid</var></code>,
 then push `master` and that tag to `origin`.
