@@ -431,6 +431,10 @@
 		this.indexStatement = 0;
 		this.toggle( true );
 	};
+	StatementsProgressBarWidget.prototype.disable = function () {
+		this.toggle( false );
+		this.setProgress( 0 );
+	};
 	StatementsProgressBarWidget.prototype.updateProgress = function () {
 		this.setProgress(
 			100 * ( ( this.loadedEntityIds ? this.totalQueryCalls : 0 ) +
@@ -702,6 +706,9 @@
 					await new Promise( resolve => setTimeout( resolve, 1000 ) );
 					this.actions.setMode( 'edit' );
 					this.close();
+				} ).next( async () => {
+					// regardless whether we finished or stopped, remove the progress bar again
+					this.statementsProgressBarWidget.disable();
 				} );
 			case 'stop':
 				return new OO.ui.Process( async () => {
