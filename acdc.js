@@ -491,15 +491,25 @@
 			action: 'save',
 			label: mw.message( 'wikibasemediainfo-filepage-publish' ).text(),
 			flags: [ 'primary', 'progressive' ],
+			modes: [ 'edit' ],
 			disabled: true, // see updateCanSave
 		},
 		{
 			label: mw.message( 'wikibasemediainfo-filepage-cancel' ).text(),
 			flags: [ 'safe', 'close' ],
+			modes: [ 'edit', 'save' ],
+		},
+		{
+			action: 'stop',
+			label: 'Stop', // TODO i18n
+			flags: [ 'primary', 'destructive' ],
+			modes: [ 'save' ],
 		},
 	];
 	StatementsDialog.prototype.initialize = function () {
 		StatementsDialog.super.prototype.initialize.call( this );
+
+		this.stopped = false;
 
 		this.filesWidget = new FilesWidget( {
 			indicator: 'required',
@@ -595,6 +605,7 @@
 	StatementsDialog.prototype.getSetupProcess = function ( data ) {
 		return StatementsDialog.super.prototype.getSetupProcess.call( this, data ).next( async () => {
 			this.title.setLabel( 'AC/DC' );
+			this.actions.setMode( 'edit' );
 		} );
 	};
 	StatementsDialog.prototype.getReadyProcess = function ( data ) {
@@ -607,6 +618,8 @@
 		switch ( action ) {
 			case 'save':
 				return new OO.ui.Process( async () => {
+					this.actions.setMode( 'save' );
+
 					const titles = this.filesWidget.getTitles();
 					this.statementsProgressBarWidget.enable(
 						titles.length,
@@ -668,6 +681,11 @@
 								} );
 							statementWidget.getRemovals = () => [];
 
+							if ( this.stopped ) {
+								this.stopped = false;
+								return;
+							}
+
 							await statementWidget.submit( entityData[ entityId ].lastrevid );
 
 							this.statementsProgressBarWidget.finishedStatements(
@@ -682,10 +700,24 @@
 					this.statementsProgressBarWidget.finished();
 					// leave the dialog open for a second so the user has a chance to see the finished progress bar
 					await new Promise( resolve => setTimeout( resolve, 1000 ) );
+					this.actions.setMode( 'edit' );
 					this.close();
+				} );
+			case 'stop':
+				return new OO.ui.Process( async () => {
+					this.stopped = true;
+					this.actions.setMode( 'edit' );
 				} );
 			default:
 				return StatementsDialog.super.prototype.getActionProcess.call( this, action );
+		}
+	};
+	StatementsDialog.prototype.onActionClick = function ( action ) {
+		if ( !this.isPending() || action.getAction() === 'stop' ) {
+			// usually, actions are not executed while pending;
+			// however, we want the 'stop' action to go through during save –
+			// it would be nice if there was a better way to do this :/
+			this.executeAction( action.getAction() );
 		}
 	};
 	StatementsDialog.prototype.hasDuplicateStatements = function () {
