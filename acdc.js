@@ -653,7 +653,7 @@
 													// not equal but no change from our side, do nothing
 													return [];
 												} else {
-													// adding some qualifiers
+													// adding some qualifiers or bumping rank
 													return [ updatedStatement ];
 												}
 											}
