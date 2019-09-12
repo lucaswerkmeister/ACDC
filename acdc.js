@@ -22,19 +22,31 @@
 		] ),
 		{ StatementWidget, AddPropertyWidget } = require( 'wikibase.mediainfo.statements' );
 
+	/**
+	 * Maps titles to entity IDs.
+	 * @param {string[]} titles
+	 * @return {Object.<string,string>} map from title to entity ID
+	 */
 	async function titlesToEntityIds( titles ) {
 		const api = new mw.Api(),
 			allTitles = titles.slice(), // copy that we can splice without affecting the original
-			entityIds = [];
+			entityIds = {};
 		let someTitles;
 		while ( ( someTitles = allTitles.splice( 0, 50 ) ).length > 0 ) {
-			const response = await api.get( { action: 'query', titles: someTitles, formatversion: 2 } ),
-				someEntityIds = response.query.pages.map( page => `M${page.pageid}` );
-			entityIds.push( ...someEntityIds );
+			const response = await api.get( { action: 'query', titles: someTitles, formatversion: 2 } );
+			for ( const page of response.query.pages ) {
+				entityIds[ page.title ] = `M${page.pageid}`;
+			}
 		}
 		return entityIds;
 	}
 
+	/**
+	 * Maps entity IDs to entity data.
+	 * @param {string[]} entityIds
+	 * @param {string[]} props
+	 * @return {Object.<string,Object>} map from entity ID to entity data
+	 */
 	async function entityIdsToData( entityIds, props ) {
 		const api = new mw.Api(),
 			allEntityIds = entityIds.slice(), // copy that we can splice without affecting the original
@@ -604,13 +616,13 @@
 					const entityIds = await titlesToEntityIds( titles );
 					this.statementsProgressBarWidget.finishedLoadingEntityIds();
 
-					const entityData = await entityIdsToData( entityIds, [ 'info', 'claims' ] );
+					const entityData = await entityIdsToData( Object.values( entityIds ), [ 'info', 'claims' ] );
 					this.statementsProgressBarWidget.finishedLoadingEntityData();
 
 					const statementListDeserializer = new wikibase.serialization.StatementListDeserializer(),
 						statementSerializer = new wikibase.serialization.StatementSerializer(),
 						statementDeserializer = new wikibase.serialization.StatementDeserializer();
-					for ( const entityId of entityIds ) {
+					for ( const [ title, entityId ] of Object.entries( entityIds ) ) {
 						const guidGenerator = new wikibase.utilities.ClaimGuidGenerator( entityId );
 
 						for ( const statementWidget of this.statementWidgets ) {
@@ -663,6 +675,7 @@
 							);
 						}
 
+						this.filesWidget.removeTagByData( title );
 						this.statementsProgressBarWidget.finishedEntity();
 					}
 
