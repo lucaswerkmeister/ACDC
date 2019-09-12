@@ -606,7 +606,7 @@
 	StatementsDialog.prototype.getActionProcess = function ( action ) {
 		switch ( action ) {
 			case 'save':
-				return new OO.ui.Process( $.when( ( async () => { // $.when works around T230160
+				return new OO.ui.Process( async () => {
 					const titles = this.filesWidget.getTitles();
 					this.statementsProgressBarWidget.enable(
 						titles.length,
@@ -683,7 +683,7 @@
 					// leave the dialog open for a second so the user has a chance to see the finished progress bar
 					await new Promise( resolve => setTimeout( resolve, 1000 ) );
 					this.close();
-				} )() ).promise() );
+				} );
 			default:
 				return StatementsDialog.super.prototype.getActionProcess.call( this, action );
 		}
