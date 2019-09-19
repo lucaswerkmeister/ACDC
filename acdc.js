@@ -481,11 +481,13 @@
 	 *
 	 * @constructor
 	 * @param {Object} [config] Configuration options
+	 * @cfg {string[]} [tags] Change tags to apply to edits.
 	 */
 	function StatementsDialog( config ) {
 		StatementsDialog.super.call( this, $.extend( {
 			size: 'large',
 		}, config ) );
+		this.tags = ( config || {} ).tags || [];
 	}
 	OO.inheritClass( StatementsDialog, OO.ui.ProcessDialog );
 	StatementsDialog.static.name = 'statements';
@@ -534,6 +536,7 @@
 				isDefaultProperty: false,
 				properties: { [ id ]: 'wikibase-entityid' }, // pretend all properties use entity IDs, for now
 				$overlay: this.$overlay,
+				tags: this.tags,
 			} );
 			statementWidget.connect( this, { change: 'updateCanSave' } );
 			statementWidget.connect( this, { change: 'updateSize' } );
@@ -610,6 +613,9 @@
 		return StatementsDialog.super.prototype.getSetupProcess.call( this, data ).next( async () => {
 			this.title.setLabel( 'AC/DC' );
 			this.actions.setMode( 'edit' );
+			if ( 'tags' in data ) {
+				this.tags = data.tags;
+			}
 		} );
 	};
 	StatementsDialog.prototype.getReadyProcess = function ( data ) {
@@ -752,6 +758,12 @@
 			50; // not sure why a bit of extra space is necessary :/
 	};
 
+	let tags = [];
+	if ( mw.config.get( 'wgServer' ) === '//commons.wikimedia.org' ||
+		mw.config.get( 'wgServer' ) === '//test-commons.wikimedia.org' ) {
+		tags = [ 'ACDC' ];
+	}
+
 	const factory = new OO.Factory();
 	factory.register( StatementsDialog );
 
@@ -766,7 +778,7 @@
 		$portletLink = $( portletLink );
 	$portletLink.on( 'click', () => {
 		try {
-			windowManager.openWindow( 'statements' );
+			windowManager.openWindow( 'statements', { tags } );
 		} catch ( e ) {
 			OO.ui.alert( String( e ) );
 		}
@@ -776,7 +788,7 @@
 	const startup = mw.util.getParamValue( 'acdcShow' ),
 		startupPagePileId = mw.util.getParamValue( 'acdcPagePileId' );
 	if ( startup || startupPagePileId ) {
-		windowManager.openWindow( 'statements' );
+		windowManager.openWindow( 'statements', { tags } );
 		const statementsDialog = await windowManager.getWindow( 'statements' );
 		if ( startupPagePileId ) {
 			await statementsDialog.filesWidget.loadPagePile( startupPagePileId );
