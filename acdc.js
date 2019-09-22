@@ -168,6 +168,8 @@
 			$container: this.$input, // the default is this.$element, which in a non-'outline' TagMultiselectWidget is never attached to the DOM, so the lookup can’t position itself relative to it
 		}, config ) );
 		this.skippedFiles = config.skippedFiles || [];
+		this.$element.addClass( 'acdc-fileInputWidget' );
+		this.$input.addClass( 'acdc-fileInputWidget-input' );
 		this.lookupMenu.connect( this, { choose: [ 'emit', 'select' ] } );
 		this.$input.on( 'paste', ( { originalEvent: clipboardEvent } ) => {
 			const value = clipboardEvent.clipboardData.getData( 'text' )
@@ -251,6 +253,7 @@
 		} );
 
 		this.$overlay = ( config.$overlay === true ? OO.ui.getDefaultOverlay() : config.$overlay ) || this.$element;
+		this.$element.addClass( 'acdc-filesWidget' );
 
 		// we turn the ellipsis icon into a “button” opening a popup menu with currently one button
 		this.categoryButton = new OO.ui.ButtonWidget( {
@@ -417,6 +420,7 @@
 			progress: 0,
 		}, config ) );
 		this.toggle( false );
+		this.$element.addClass( 'acdc-statementsProgressBarWidget' );
 	}
 	OO.inheritClass( StatementsProgressBarWidget, OO.ui.ProgressBarWidget );
 	StatementsProgressBarWidget.prototype.enable = function ( numberEntities, numberStatementsPerEntity ) {
@@ -488,6 +492,7 @@
 			size: 'large',
 		}, config ) );
 		this.tags = ( config || {} ).tags || [];
+		this.$element.addClass( 'acdc-statementsDialog' );
 	}
 	OO.inheritClass( StatementsDialog, OO.ui.ProcessDialog );
 	StatementsDialog.static.name = 'statements';
