@@ -9,7 +9,8 @@ describe( 'AC/DC', () => {
 	} );
 
 	async function injectAcdc() {
-		await browser.waitUntil( () => browser.execute( () => window.mediaWiki !== undefined && window.jQuery !== undefined ) );
+		await browser.waitUntil( () => browser.execute(
+			() => window.mediaWiki !== undefined && window.jQuery !== undefined ) );
 		await browser.execute( acdc );
 	}
 
