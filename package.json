@@ -7,19 +7,27 @@
   "devDependencies": {
     "@babel/core": "^7.5.5",
     "@babel/preset-env": "^7.5.5",
+    "@wdio/cli": "^5.13.1",
+    "@wdio/dot-reporter": "^5.12.1",
+    "@wdio/local-runner": "^5.13.1",
+    "@wdio/mocha-framework": "^5.12.1",
     "babel-loader": "^8.0.6",
+    "chromedriver": "^77.0.0",
     "core-js": "^3.2.1",
     "eslint": "^6.3.0",
     "eslint-config-wikimedia": "^0.14.1",
+    "eslint-plugin-webdriverio": "^1.0.1",
     "regenerator-runtime": "^0.13.3",
+    "wdio-chromedriver-service": "^5.0.2",
     "webpack": "^4.39.3",
     "webpack-cli": "^3.3.7"
   },
   "scripts": {
     "build": "webpack",
-    "test": "npm run lint",
+    "test": "npm run lint && npm run wdio",
     "lint": "eslint .",
-    "fix": "eslint --fix ."
+    "fix": "eslint --fix .",
+    "wdio": "wdio wdio.conf.js"
   },
   "repository": {
     "type": "git",

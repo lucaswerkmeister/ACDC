@@ -3,3 +3,5 @@ node_js: node # means “latest” in nvm
 script:
   - make check
   - make all
+addons:
+  chrome: stable
