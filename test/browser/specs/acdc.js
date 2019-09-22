@@ -1,5 +1,6 @@
 const assert = require( 'assert' ),
-	fs = require( 'fs' ).promises;
+	fs = require( 'fs' ).promises,
+	process = require( 'process' );
 
 describe( 'AC/DC', () => {
 	let acdc;
@@ -83,6 +84,116 @@ describe( 'AC/DC', () => {
 			browser.keys( [ 'Enter' ] ); // we don’t do anything special with the menu, Enter should select the first suggestion
 			const tagItem = await filesWidget.$( '.oo-ui-tagItemWidget' );
 			assert.strictEqual( await tagItem.getText(), 'File:ACDC test file 1.pdf' );
+		} );
+	} );
+
+	describe( 'statements', () => {
+		beforeEach( 'open blank page, inject AC/DC code and log in', async function () {
+			const username = process.env.MEDIAWIKI_USERNAME,
+				password = process.env.MEDIAWIKI_PASSWORD;
+			if ( username === undefined || password === undefined ) {
+				this.skip();
+			}
+
+			await browser.url( '/wiki/Special:BlankPage?uselang=en&acdcShow=1' );
+			await injectAcdc();
+
+			await browser.executeAsync( async ( username, password, done ) => {
+				const api = new mediaWiki.Api();
+				const token = ( await api.get( {
+					action: 'query',
+					meta: 'tokens',
+					type: 'login',
+				} ) ).query.tokens.logintoken;
+				await api.post( {
+					action: 'login',
+					lgname: username,
+					lgpassword: password,
+					lgtoken: token,
+				} );
+				done();
+			}, username, password );
+		} );
+
+		it( 'can add a single statement', async () => {
+			const file = 'File:ACDC test file 1.pdf';
+			const entityId = 'M904';
+			const propertyId = 'P180';
+			const value = 'Q4115189'; // sandbox item
+			// reset entity first
+			await browser.executeAsync( async ( entityId, done ) => {
+				// TODO when T233522 is resolved, use wbeditentity with clear
+				// instead of building removeStatementsData
+				const api = new mediaWiki.Api();
+				const statements = ( await api.get( {
+					action: 'wbgetclaims',
+					entity: entityId,
+				} ) ).claims;
+				const removeStatementsData = { claims: {} };
+				for ( const propertyId in statements ) {
+					removeStatementsData.claims[ propertyId ] = [];
+					for ( const statement of statements[ propertyId ] ) {
+						removeStatementsData.claims[ propertyId ].push( {
+							id: statement.id,
+							remove: '',
+						} );
+					}
+				}
+				const token = ( await api.get( {
+					action: 'query',
+					meta: 'tokens',
+				} ) ).query.tokens.csrftoken;
+				await api.post( {
+					action: 'wbeditentity',
+					id: entityId,
+					summary: 'clear for browser test',
+					token,
+					data: JSON.stringify( removeStatementsData ),
+				} );
+				done();
+			}, entityId );
+
+			const dialog = await $( '.acdc-statementsDialog' );
+			await dialog.waitForDisplayed();
+
+			const filesInput = await dialog.$( '.acdc-filesWidget .acdc-fileInputWidget-input' );
+			await filesInput.setValue( file );
+			await browser.keys( [ 'Enter' ] );
+
+			const addStatementButton = await dialog.$( '.wbmi-add-property .oo-ui-buttonElement-button' );
+			await addStatementButton.click();
+			const addStatementInput = await dialog.$( '.wbmi-entityview-add-statement-property .oo-ui-inputWidget-input' );
+			await addStatementInput.waitForDisplayed();
+			await addStatementInput.setValue( propertyId );
+			const propertyEntry = await dialog.$( '.wbmi-entityselector-itemcontent' );
+			await propertyEntry.waitForDisplayed();
+			await propertyEntry.click();
+
+			const statementsWidget = await dialog.$( '.wbmi-statements-widget' );
+			await statementsWidget.waitForDisplayed();
+
+			const valueInput = await statementsWidget.$( '.wbmi-statement-input input' );
+			await valueInput.setValue( value );
+			const valueEntry = await statementsWidget.$( '.wbmi-entityselector-itemcontent' );
+			await valueEntry.waitForDisplayed();
+			await valueEntry.click();
+
+			const submitButton = await dialog.$( '.oo-ui-processDialog-actions-primary .oo-ui-buttonElement-button' );
+			await submitButton.click();
+
+			// wait until no longer displayed ⇒ done
+			await dialog.waitForDisplayed( /* ms: */ undefined, /* reverse: */ true );
+			const entityData = await browser.executeAsync( async ( entityId, done ) => {
+				const api = new mediaWiki.Api();
+				done( ( await api.get( {
+					action: 'wbgetentities',
+					ids: entityId,
+				} ) ).entities[ entityId ] );
+			}, entityId );
+
+			assert.strictEqual(
+				entityData.statements[ propertyId ][ 0 ].mainsnak.datavalue.value.id,
+				value );
 		} );
 	} );
 } );
