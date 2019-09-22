@@ -250,7 +250,7 @@
 			this.input.setSkippedFiles( this.getTitles() );
 		} );
 
-		this.$overlay = ( config.$overlay === true ? OO.ui.getDefaultOverlay() : config.$overlay ) || this.$elemnt;
+		this.$overlay = ( config.$overlay === true ? OO.ui.getDefaultOverlay() : config.$overlay ) || this.$element;
 
 		// we turn the ellipsis icon into a “button” opening a popup menu with currently one button
 		this.categoryButton = new OO.ui.ButtonWidget( {
