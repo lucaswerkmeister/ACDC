@@ -44,7 +44,9 @@ describe( 'AC/DC', () => {
 
 		it( 'defines the portlet link', async () => {
 			const content = await $( '#t-acdc' );
-			assert.strictEqual( await content.getText(), 'AC/DC' );
+			// note: if the dialog is already opened, the link is not interactable
+			// and we can’t use getText(), so use getHTML( false ) instead
+			assert.ok( ( await content.getHTML( false ) ).includes( 'AC/DC' ) );
 		} );
 
 		it( 'opens the dialog', async () => {
