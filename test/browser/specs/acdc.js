@@ -117,9 +117,17 @@ describe( 'AC/DC', () => {
 
 		it( 'can add a single statement', async () => {
 			const file = 'File:ACDC test file 1.pdf';
-			const entityId = 'M904';
-			const propertyId = 'P180';
-			const value = 'Q4115189'; // sandbox item
+			const entityId = await browser.executeAsync( async ( file, done ) => {
+				const api = new mediaWiki.Api();
+				const pageId = ( await api.get( {
+					action: 'query',
+					titles: file,
+					formatversion: 2,
+				} ) ).query.pages[ 0 ].pageid;
+				done( `M${pageId}` );
+			}, file );
+			const propertyId = 'P694';
+			const value = 'Q15';
 			// reset entity first
 			await browser.executeAsync( async ( entityId, done ) => {
 				// TODO when T233522 is resolved, use wbeditentity with clear
