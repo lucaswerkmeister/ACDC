@@ -11,7 +11,9 @@ describe( 'AC/DC', () => {
 
 	async function injectAcdc() {
 		await browser.waitUntil( () => browser.execute(
-			() => window.mediaWiki !== undefined && window.jQuery !== undefined ) );
+			() => window.mediaWiki !== undefined &&
+				window.jQuery !== undefined &&
+				window.mediaWiki.loader.using !== undefined ) );
 		await browser.execute( acdc );
 	}
 
