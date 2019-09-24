@@ -1,7 +1,7 @@
 const assert = require( 'assert' ),
 	fs = require( 'fs' ).promises,
 	process = require( 'process' ),
-	ACDC = require( '../pageobjects/acdc' );
+	ACDC = require( '../pageobjects/ACDC' );
 
 describe( 'AC/DC', () => {
 	let acdc;
@@ -144,26 +144,14 @@ describe( 'AC/DC', () => {
 			await ACDC.setFileInputValue( file );
 			await browser.keys( [ 'Enter' ] );
 
-			const addStatementButton = await dialog.$( '.wbmi-add-property .oo-ui-buttonElement-button' );
-			await addStatementButton.click();
-			const addStatementInput = await dialog.$( '.wbmi-entityview-add-statement-property .oo-ui-inputWidget-input' );
-			await addStatementInput.waitForDisplayed();
-			await addStatementInput.setValue( propertyId );
-			const propertyEntry = await dialog.$( '.wbmi-entityselector-itemcontent' );
-			await propertyEntry.waitForDisplayed();
-			await propertyEntry.click();
+			await ACDC.addProperty( propertyId );
 
-			const statementsWidget = await dialog.$( '.wbmi-statements-widget' );
+			const statementsWidget = await ACDC.statementsWidget( 1 );
 			await statementsWidget.waitForDisplayed();
 
-			const valueInput = await statementsWidget.$( '.wbmi-statement-input input' );
-			await valueInput.setValue( value );
-			const valueEntry = await statementsWidget.$( '.wbmi-entityselector-itemcontent' );
-			await valueEntry.waitForDisplayed();
-			await valueEntry.click();
+			await statementsWidget.addValue( value );
 
-			const submitButton = await dialog.$( '.oo-ui-processDialog-actions-primary .oo-ui-buttonElement-button' );
-			await submitButton.click();
+			await ( await ACDC.submitButton ).click();
 
 			// wait until no longer displayed ⇒ done
 			await dialog.waitForDisplayed( /* ms: */ undefined, /* reverse: */ true );
