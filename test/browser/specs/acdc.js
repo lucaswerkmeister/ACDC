@@ -127,23 +127,7 @@ describe( 'AC/DC', () => {
 			const value = 'Q15';
 			// reset entity first
 			await browser.executeAsync( async ( entityId, done ) => {
-				// TODO when T233522 is resolved, use wbeditentity with clear
-				// instead of building removeStatementsData
 				const api = new mediaWiki.Api();
-				const statements = ( await api.get( {
-					action: 'wbgetclaims',
-					entity: entityId,
-				} ) ).claims;
-				const removeStatementsData = { claims: {} };
-				for ( const propertyId in statements ) {
-					removeStatementsData.claims[ propertyId ] = [];
-					for ( const statement of statements[ propertyId ] ) {
-						removeStatementsData.claims[ propertyId ].push( {
-							id: statement.id,
-							remove: '',
-						} );
-					}
-				}
 				const token = ( await api.get( {
 					action: 'query',
 					meta: 'tokens',
@@ -153,7 +137,8 @@ describe( 'AC/DC', () => {
 					id: entityId,
 					summary: 'clear for browser test',
 					token,
-					data: JSON.stringify( removeStatementsData ),
+					data: JSON.stringify( { labels: { en: { value: 'test file for the AC/DC gadget', language: 'en' } } } ),
+					clear: true,
 				} );
 				done();
 			}, entityId );
