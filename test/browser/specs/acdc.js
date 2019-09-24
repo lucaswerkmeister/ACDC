@@ -85,6 +85,29 @@ describe( 'AC/DC', () => {
 	} );
 
 	describe( 'statements', () => {
+		const filePageIds = { // initialized in before() hook
+			'File:ACDC test file 1.pdf': -1,
+		};
+		const wikibaseItemPropertyId = 'P694';
+		const itemId = 'Q15';
+
+		before( 'load page IDs', async () => {
+			const realPageIds = await browser.executeAsync( async ( titles, done ) => {
+				const api = new mediaWiki.Api();
+				const pages = ( await api.get( {
+					action: 'query',
+					titles,
+					formatversion: 2,
+				} ) ).query.pages;
+				const pageIds = {};
+				for ( const page of pages ) {
+					pageIds[ page.title ] = page.pageid;
+				}
+				done( pageIds );
+			}, Object.keys( filePageIds ) );
+			Object.assign( filePageIds, realPageIds );
+		} );
+
 		beforeEach( 'open blank page, inject AC/DC code and log in', async function () {
 			const username = process.env.MEDIAWIKI_USERNAME,
 				password = process.env.MEDIAWIKI_PASSWORD;
@@ -114,17 +137,9 @@ describe( 'AC/DC', () => {
 
 		it( 'can add a single statement', async () => {
 			const file = 'File:ACDC test file 1.pdf';
-			const entityId = await browser.executeAsync( async ( file, done ) => {
-				const api = new mediaWiki.Api();
-				const pageId = ( await api.get( {
-					action: 'query',
-					titles: file,
-					formatversion: 2,
-				} ) ).query.pages[ 0 ].pageid;
-				done( `M${pageId}` );
-			}, file );
-			const propertyId = 'P694';
-			const value = 'Q15';
+			const entityId = `M${filePageIds[ file ]}`;
+			const propertyId = wikibaseItemPropertyId;
+			const value = itemId;
 			// reset entity first
 			await browser.executeAsync( async ( entityId, done ) => {
 				const api = new mediaWiki.Api();
