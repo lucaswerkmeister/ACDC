@@ -128,15 +128,10 @@ describe( 'AC/DC', () => {
 			// reset entity first
 			await browser.executeAsync( async ( entityId, done ) => {
 				const api = new mediaWiki.Api();
-				const token = ( await api.get( {
-					action: 'query',
-					meta: 'tokens',
-				} ) ).query.tokens.csrftoken;
-				await api.post( {
+				await api.postWithEditToken( {
 					action: 'wbeditentity',
 					id: entityId,
 					summary: 'clear for browser test',
-					token,
 					data: JSON.stringify( { labels: { en: { value: 'test file for the AC/DC gadget', language: 'en' } } } ),
 					clear: true,
 				} );
