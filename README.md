@@ -2,7 +2,7 @@
 
 **Add to Commons / Descriptive Claims** is a gadget for Wikimedia Commons
 to add a collection of statements to a set of files.
-See the [on-wiki documentation](https://commons.wikimedia.org/wiki/Help:Gadget-ACDC) for more information.
+See the [on-wiki documentation](https://commons.wikimedia.org/wiki/Special:MyLanguage/Help:Gadget-ACDC) for more information.
 
 ## Development
 
