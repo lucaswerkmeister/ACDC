@@ -1,5 +1,9 @@
 class ACDC {
 
+	get portletLink() {
+		return $( '#t-acdc' );
+	}
+
 	get dialog() {
 		return $( '.acdc-statementsDialog' );
 	}

@@ -25,14 +25,14 @@ describe( 'AC/DC', () => {
 		} );
 
 		it( 'defines the portlet link', async () => {
-			const portletLink = await $( '#t-acdc' );
+			const portletLink = await ACDC.portletLink;
 			assert.strictEqual( await portletLink.getText(), 'AC/DC' );
 		} );
 
 		it( 'opens the dialog when clicking the portlet link', async () => {
-			const portletLink = await $( '#t-acdc' );
+			const portletLink = await ACDC.portletLink;
 			await portletLink.click();
-			const dialog = await $( '.acdc-statementsDialog' );
+			const dialog = await ACDC.dialog;
 			await dialog.waitForDisplayed();
 		} );
 	} );
@@ -44,14 +44,14 @@ describe( 'AC/DC', () => {
 		} );
 
 		it( 'defines the portlet link', async () => {
-			const content = await $( '#t-acdc' );
+			const content = await ACDC.portletLink;
 			// note: if the dialog is already opened, the link is not interactable
 			// and we can’t use getText(), so use getHTML( false ) instead
 			assert.ok( ( await content.getHTML( false ) ).includes( 'AC/DC' ) );
 		} );
 
 		it( 'opens the dialog', async () => {
-			const dialog = await $( '.acdc-statementsDialog' );
+			const dialog = await ACDC.dialog;
 			await dialog.waitForDisplayed();
 		} );
 	} );
