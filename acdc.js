@@ -580,19 +580,21 @@
 		const filesField = new OO.ui.FieldLayout( this.filesWidget, {
 			label: 'Files to edit', // TODO i18n
 			align: 'top',
+			classes: [ 'acdc-statementsDialog-filesField' ],
 		} );
 		filesField.$header.wrap( '<h3>' );
-		const addPropertyField = new OO.ui.FieldLayout( addPropertyWidget, {
+		const statementsField = new OO.ui.FieldLayout( addPropertyWidget, {
 			label: 'Statements to add', // TODO i18n
 			align: 'top',
+			classes: [ 'acdc-statementsDialog-statementsField' ],
 		} );
-		addPropertyField.$header.wrap( '<h3>' );
+		statementsField.$header.wrap( '<h3>' );
 
 		this.content = new OO.ui.PanelLayout( {
 			content: [ new OO.ui.FieldsetLayout( {
 				items: [
 					filesField,
-					addPropertyField,
+					statementsField,
 				],
 			} ) ],
 			padded: true,
