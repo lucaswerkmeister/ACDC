@@ -21,16 +21,6 @@ class ACDC {
 			.then( filesWidget => filesWidget.$( '.acdc-fileInputWidget-input' ) );
 	}
 
-	get tagItem() {
-		return this.filesWidget
-			.then( filesWidget => filesWidget.$( '.oo-ui-tagItemWidget' ) );
-	}
-
-	get tagItemText() {
-		return this.tagItem
-			.then( tagItem => tagItem.getText() );
-	}
-
 	get addStatementButton() {
 		return this.dialog
 			.then( dialog => dialog.$( '.wbmi-add-property .oo-ui-buttonElement-button' ) );
@@ -44,6 +34,16 @@ class ACDC {
 	get submitButton() {
 		return this.dialog
 			.then( dialog => dialog.$( '.oo-ui-processDialog-actions-primary .oo-ui-buttonElement-button' ) );
+	}
+
+	tagItem( index /* 1-indexed */ ) {
+		return this.filesWidget
+			.then( filesWidget => filesWidget.$( `.oo-ui-tagItemWidget:nth-child(${index})` ) );
+	}
+
+	tagItemText( index /* 1-indexed */ ) {
+		return this.tagItem( index )
+			.then( tagItem => tagItem.getText() );
 	}
 
 	statementsWidget( index /* 1-indexed */ ) {

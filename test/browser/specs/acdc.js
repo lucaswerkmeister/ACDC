@@ -66,13 +66,13 @@ describe( 'AC/DC', () => {
 		it( 'supports entering the full file name', async () => {
 			await ACDC.setFileInputValue( 'File:ACDC test file 1.pdf' );
 			browser.keys( [ 'Enter' ] );
-			assert.strictEqual( await ACDC.tagItemText, 'File:ACDC test file 1.pdf' );
+			assert.strictEqual( await ACDC.tagItemText( 1 ), 'File:ACDC test file 1.pdf' );
 		} );
 
 		it( 'adds missing File: prefix', async () => {
 			await ACDC.setFileInputValue( /* File: */ 'ACDC test file 1.pdf' );
 			browser.keys( [ 'Enter' ] );
-			assert.strictEqual( await ACDC.tagItemText, 'File:ACDC test file 1.pdf' );
+			assert.strictEqual( await ACDC.tagItemText( 1 ), 'File:ACDC test file 1.pdf' );
 		} );
 
 		it( 'supports autocompletion', async () => {
@@ -80,7 +80,7 @@ describe( 'AC/DC', () => {
 			const menu = await $( '.oo-ui-lookupElement-menu' );
 			await menu.waitForDisplayed();
 			browser.keys( [ 'Enter' ] ); // we don’t do anything special with the menu, Enter should select the first suggestion
-			assert.strictEqual( await ACDC.tagItemText, 'File:ACDC test file 1.pdf' );
+			assert.strictEqual( await ACDC.tagItemText( 1 ), 'File:ACDC test file 1.pdf' );
 		} );
 	} );
 
