@@ -82,6 +82,15 @@ describe( 'AC/DC', () => {
 			browser.keys( [ 'Enter' ] ); // we don’t do anything special with the menu, Enter should select the first suggestion
 			assert.strictEqual( await ACDC.tagItemText( 1 ), 'File:ACDC test file 1.pdf' );
 		} );
+
+		it( 'supports entering two files', async () => {
+			await ACDC.setFileInputValue( 'File:ACDC test file 1.pdf' );
+			browser.keys( [ 'Enter' ] );
+			await ACDC.setFileInputValue( 'File:ACDC test file 2.pdf' );
+			browser.keys( [ 'Enter' ] );
+			assert.strictEqual( await ACDC.tagItemText( 1 ), 'File:ACDC test file 1.pdf' );
+			assert.strictEqual( await ACDC.tagItemText( 2 ), 'File:ACDC test file 2.pdf' );
+		} );
 	} );
 
 	describe( 'statements', () => {
