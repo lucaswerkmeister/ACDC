@@ -96,6 +96,7 @@ describe( 'AC/DC', () => {
 	describe( 'statements', () => {
 		const filePageIds = { // initialized in before() hook
 			'File:ACDC test file 1.pdf': -1,
+			'File:ACDC test file 2.pdf': -1,
 		};
 		const wikibaseItemPropertyId = 'P694';
 		const itemId = 'Q15';
@@ -189,6 +190,75 @@ describe( 'AC/DC', () => {
 
 			assert.strictEqual(
 				entityData.statements[ propertyId ][ 0 ].mainsnak.datavalue.value.id,
+				value );
+		} );
+
+		it( 'can add a single statement to two files', async () => {
+			const file1 = 'File:ACDC test file 1.pdf';
+			const file2 = 'File:ACDC test file 2.pdf';
+			const entityId1 = `M${filePageIds[ file1 ]}`;
+			const entityId2 = `M${filePageIds[ file2 ]}`;
+			const propertyId = wikibaseItemPropertyId;
+			const value = itemId;
+			// reset entity first
+			await browser.executeAsync( async ( entityId1, entityId2, done ) => {
+				const api = new mediaWiki.Api();
+				const promise1 = api.postWithEditToken( {
+					action: 'wbeditentity',
+					id: entityId1,
+					summary: 'clear for browser test',
+					data: JSON.stringify( { labels: { en: { value: 'test file for the AC/DC gadget', language: 'en' } } } ),
+					clear: true,
+				} );
+				const promise2 = api.postWithEditToken( {
+					action: 'wbeditentity',
+					id: entityId2,
+					summary: 'clear for browser test',
+					data: JSON.stringify( { labels: { en: { value: 'test file for the AC/DC gadget', language: 'en' } } } ),
+					clear: true,
+				} );
+				await Promise.all( [ promise1, promise2 ] );
+				done();
+			}, entityId1, entityId2 );
+
+			const dialog = await ACDC.dialog;
+			await dialog.waitForDisplayed();
+
+			await ACDC.setFileInputValue( file1 );
+			await browser.keys( [ 'Enter' ] );
+
+			await ACDC.setFileInputValue( file2 );
+			await browser.keys( [ 'Enter' ] );
+
+			await ACDC.addProperty( propertyId );
+
+			const statementsWidget = await ACDC.statementsWidget( 1 );
+			await statementsWidget.waitForDisplayed();
+
+			await statementsWidget.addValue( value );
+
+			await ( await ACDC.submitButton ).click();
+
+			// wait until no longer displayed ⇒ done
+			await dialog.waitForDisplayed( /* ms: */ undefined, /* reverse: */ true );
+
+			const [ entityData1, entityData2 ] = await browser.executeAsync(
+				async ( entityId1, entityId2, done ) => {
+					const api = new mediaWiki.Api();
+					const entities = ( await api.get( {
+						action: 'wbgetentities',
+						ids: [ entityId1, entityId2 ],
+					} ) ).entities;
+					done( [ entities[ entityId1 ], entities[ entityId2 ] ] );
+				},
+				entityId1, entityId2
+			);
+
+			assert.strictEqual(
+				entityData1.statements[ propertyId ][ 0 ].mainsnak.datavalue.value.id,
+				value );
+			assert.strictEqual(
+				entityData2.statements[ propertyId ][ 0 ].mainsnak.datavalue.value.id,
 				value );
 		} );
 	} );
