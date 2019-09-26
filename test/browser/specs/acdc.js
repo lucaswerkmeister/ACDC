@@ -1,7 +1,11 @@
 const assert = require( 'assert' ),
 	fs = require( 'fs' ).promises,
 	process = require( 'process' ),
+	MWBot = require( 'mwbot' ),
+	wdioConf = require( '../../../wdio.conf' ),
 	ACDC = require( '../pageobjects/ACDC' );
+
+const bot = new MWBot( { apiUrl: `${wdioConf.config.baseUrl}/w/api.php` } );
 
 describe( 'AC/DC', () => {
 	let acdc;
@@ -102,20 +106,14 @@ describe( 'AC/DC', () => {
 		const itemId = 'Q15';
 
 		before( 'load page IDs', async () => {
-			const realPageIds = await browser.executeAsync( async ( titles, done ) => {
-				const api = new mediaWiki.Api();
-				const pages = ( await api.get( {
-					action: 'query',
-					titles,
-					formatversion: 2,
-				} ) ).query.pages;
-				const pageIds = {};
-				for ( const page of pages ) {
-					pageIds[ page.title ] = page.pageid;
-				}
-				done( pageIds );
-			}, Object.keys( filePageIds ) );
-			Object.assign( filePageIds, realPageIds );
+			const response = await bot.request( {
+				action: 'query',
+				titles: Object.keys( filePageIds ).join( '|' ),
+				formatversion: 2,
+			} );
+			for ( const page of response.query.pages ) {
+				filePageIds[ page.title ] = page.pageid;
+			}
 		} );
 
 		beforeEach( 'open blank page, inject AC/DC code and log in', async function () {
