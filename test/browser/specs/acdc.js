@@ -259,5 +259,63 @@ describe( 'AC/DC', () => {
 				entityData2.statements[ propertyId ][ 0 ].mainsnak.datavalue.value.id,
 				value );
 		} );
+
+		it( 'does not re-add an existing statement', async () => {
+			const file = 'File:ACDC test file 1.pdf';
+			const entityId = `M${filePageIds[ file ]}`;
+			const propertyId = wikibaseItemPropertyId;
+			const statementId = `${entityId}$ed9b7656-45c8-9fb2-cd03-3e3cd7e80b08`;
+			const value = itemId;
+
+			await browser.executeAsync( async ( entityId, propertyId, statementId, value, done ) => {
+				const api = new mediaWiki.Api();
+				await api.postWithEditToken( {
+					action: 'wbeditentity',
+					id: entityId,
+					summary: 'browser test setup',
+					data: JSON.stringify( {
+						labels: { en: { value: 'test file for the AC/DC gadget', language: 'en' } },
+						claims: { [ propertyId ]: [ {
+							type: 'statement',
+							id: statementId,
+							mainsnak: { snaktype: 'value', property: propertyId, datavalue: {
+								type: 'wikibase-entityid',
+								value: { 'entity-type': 'item', id: value },
+							} },
+						} ] },
+					} ),
+					clear: true,
+				} );
+				done();
+			}, entityId, propertyId, statementId, value );
+
+			const dialog = await ACDC.dialog;
+			await dialog.waitForDisplayed();
+
+			await ACDC.setFileInputValue( file );
+			await browser.keys( [ 'Enter' ] );
+
+			await ACDC.addProperty( propertyId );
+
+			const statementsWidget = await ACDC.statementsWidget( 1 );
+			await statementsWidget.waitForDisplayed();
+
+			await statementsWidget.addValue( value );
+
+			await ( await ACDC.submitButton ).click();
+
+			// wait until no longer displayed ⇒ done
+			await dialog.waitForDisplayed( /* ms: */ undefined, /* reverse: */ true );
+			const entityData = await browser.executeAsync( async ( entityId, done ) => {
+				const api = new mediaWiki.Api();
+				done( ( await api.get( {
+					action: 'wbgetentities',
+					ids: entityId,
+				} ) ).entities[ entityId ] );
+			}, entityId );
+
+			assert.strictEqual( entityData.statements[ propertyId ].length, 1 );
+			assert.strictEqual( entityData.statements[ propertyId ][ 0 ].id, statementId );
+		} );
 	} );
 } );
