@@ -11,15 +11,14 @@
 			'oojs-ui.styles.icons-editing-list',
 			'wikibase.mediainfo.statements',
 			'wikibase.utilities.ClaimGuidGenerator',
-			'wikibase.datamodel.Statement',
-			'wikibase.datamodel.Claim',
-			'wikibase.datamodel.PropertyNoValueSnak',
-			'wikibase.serialization.StatementListDeserializer',
-			'wikibase.serialization.StatementSerializer',
-			'wikibase.serialization.StatementDeserializer',
+			'wikibase.datamodel',
+			'wikibase.serialization',
 			'mediawiki.api',
 			'mediawiki.util',
 		] ),
+		ClaimGuidGenerator = wikibase.utilities.ClaimGuidGenerator,
+		{ Statement, Claim, PropertyNoValueSnak } = require( 'wikibase.datamodel' ),
+		{ StatementListDeserializer, StatementSerializer, StatementDeserializer } = require( 'wikibase.serialization' ),
 		{ StatementWidget, AddPropertyWidget } = require( 'wikibase.mediainfo.statements' );
 
 	/**
@@ -120,11 +119,11 @@
 	}
 
 	function sanityCheckStatementEquals() {
-		const snak = new wikibase.datamodel.PropertyNoValueSnak( 'P1' ),
-			claim1 = new wikibase.datamodel.Claim( snak, null, 'guid 1' ),
-			statement1 = new wikibase.datamodel.Statement( claim1 ),
-			claim2 = new wikibase.datamodel.Claim( snak, null, 'guid 2' ),
-			statement2 = new wikibase.datamodel.Statement( claim2 );
+		const snak = new PropertyNoValueSnak( 'P1' ),
+			claim1 = new Claim( snak, null, 'guid 1' ),
+			statement1 = new Statement( claim1 ),
+			claim2 = new Claim( snak, null, 'guid 2' ),
+			statement2 = new Statement( claim2 );
 		if ( !statement1.equals( statement2 ) ) {
 			// if different GUIDs break Statement.equals, we can’t detect duplicate statements
 			failSanityCheck( 'Statement.equals' );
@@ -649,11 +648,11 @@
 					const entityData = await entityIdsToData( Object.values( entityIds ), [ 'info', 'claims' ] );
 					this.statementsProgressBarWidget.finishedLoadingEntityData();
 
-					const statementListDeserializer = new wikibase.serialization.StatementListDeserializer(),
-						statementSerializer = new wikibase.serialization.StatementSerializer(),
-						statementDeserializer = new wikibase.serialization.StatementDeserializer();
+					const statementListDeserializer = new StatementListDeserializer(),
+						statementSerializer = new StatementSerializer(),
+						statementDeserializer = new StatementDeserializer();
 					for ( const [ title, entityId ] of Object.entries( entityIds ) ) {
-						const guidGenerator = new wikibase.utilities.ClaimGuidGenerator( entityId );
+						const guidGenerator = new ClaimGuidGenerator( entityId );
 
 						for ( const statementWidget of this.statementWidgets ) {
 							const previousStatements = statementListDeserializer.deserialize(
@@ -674,8 +673,8 @@
 
 												updatedStatement.getClaim().getQualifiers().merge( newStatement.getClaim().getQualifiers() );
 
-												if ( newStatement.getRank() !== wikibase.datamodel.Statement.RANK.NORMAL &&
-													updatedStatement.getRank() === wikibase.datamodel.Statement.RANK.NORMAL ) {
+												if ( newStatement.getRank() !== Statement.RANK.NORMAL &&
+													updatedStatement.getRank() === Statement.RANK.NORMAL ) {
 													updatedStatement.setRank( newStatement.getRank() );
 												}
 
@@ -690,8 +689,8 @@
 										}
 									}
 									// no existing statement matched, add new
-									return [ new wikibase.datamodel.Statement(
-										new wikibase.datamodel.Claim( newStatement.getClaim().getMainSnak(), newStatement.getClaim().getQualifiers(), guidGenerator.newGuid() ),
+									return [ new Statement(
+										new Claim( newStatement.getClaim().getMainSnak(), newStatement.getClaim().getQualifiers(), guidGenerator.newGuid() ),
 										newStatement.getReferences(),
 										newStatement.getRank()
 									) ];

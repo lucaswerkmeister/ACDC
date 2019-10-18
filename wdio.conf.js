@@ -99,6 +99,7 @@ module.exports.config = {
 	// If your `url` parameter starts without a scheme or `/` (like `some/path`), the base url
 	// gets prepended directly.
 	baseUrl: 'https://commons.wikimedia.beta.wmflabs.org',
+	// baseUrl: 'https://test-commons.wikimedia.org',
 	//
 	// Default timeout for all waitFor* commands.
 	waitforTimeout: 10000,
