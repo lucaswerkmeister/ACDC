@@ -533,12 +533,13 @@
 		const addPropertyWidget = new AddPropertyWidget( {
 			$overlay: this.$overlay,
 		} );
-		addPropertyWidget.on( 'choose', ( { id } ) => {
+		addPropertyWidget.on( 'choose', ( _widget, { id, datatype } ) => {
 			const statementWidget = new StatementWidget( {
 				entityId: '', // this widget is reused for multiple entities, we inject the entity IDs on publish
 				propertyId: id,
 				isDefaultProperty: false,
-				properties: { [ id ]: 'wikibase-entityid' }, // pretend all properties use entity IDs, for now
+				propertyType: datatype,
+				properties: { [ id ]: 'wikibase-entityid' }, // backwards compatibility until d69067b8da23dd8f0e98abc5694f38b59cb05e0f is deployed everywhere
 				$overlay: this.$overlay,
 				tags: this.tags,
 			} );
