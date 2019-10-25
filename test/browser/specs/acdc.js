@@ -174,7 +174,7 @@ describe( 'AC/DC', () => {
 
 			await statementsWidget.addValue( value );
 
-			await ( await ACDC.submitButton ).click();
+			await ACDC.submit();
 
 			// wait until no longer displayed ⇒ done
 			await dialog.waitForDisplayed( /* ms: */ undefined, /* reverse: */ true );
@@ -235,7 +235,7 @@ describe( 'AC/DC', () => {
 
 			await statementsWidget.addValue( value );
 
-			await ( await ACDC.submitButton ).click();
+			await ACDC.submit();
 
 			// wait until no longer displayed ⇒ done
 			await dialog.waitForDisplayed( /* ms: */ undefined, /* reverse: */ true );
@@ -302,7 +302,7 @@ describe( 'AC/DC', () => {
 
 			await statementsWidget.addValue( value );
 
-			await ( await ACDC.submitButton ).click();
+			await ACDC.submit();
 
 			// wait until no longer displayed ⇒ done
 			await dialog.waitForDisplayed( /* ms: */ undefined, /* reverse: */ true );

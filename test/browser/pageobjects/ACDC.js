@@ -67,6 +67,15 @@ class ACDC {
 		await propertyEntry.waitForDisplayed();
 		await propertyEntry.click();
 	}
+
+	async submit() {
+		const submitButton = await this.submitButton;
+		await browser.waitUntil( async () => {
+			const disabled = await submitButton.getAttribute( 'aria-disabled' );
+			return disabled === 'false';
+		} );
+		await submitButton.click();
+	}
 }
 
 module.exports = new ACDC();
