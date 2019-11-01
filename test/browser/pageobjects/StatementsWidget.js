@@ -8,7 +8,7 @@ class StatementsWidget {
 
 	get valueInput() {
 		return this.element
-			.then( element => element.$( '.wbmi-statements-widget input' ) );
+			.then( element => element.$( '.wbmi-statement-input input' ) );
 	}
 
 	async waitForDisplayed() {
