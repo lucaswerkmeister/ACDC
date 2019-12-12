@@ -249,7 +249,7 @@ describe( 'AC/DC', () => {
 					} ) ).entities;
 					done( [ entities[ entityId1 ], entities[ entityId2 ] ] );
 				},
-				entityId1, entityId2
+				entityId1, entityId2,
 			);
 
 			assert.strictEqual(

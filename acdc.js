@@ -373,7 +373,7 @@
 	};
 	FilesWidget.prototype.loadPagePile = async function ( pagePileId ) {
 		const pileJson = await fetch(
-			`https://tools.wmflabs.org/pagepile/api.php?action=get_data&id=${pagePileId}&format=json`
+			`https://tools.wmflabs.org/pagepile/api.php?action=get_data&id=${pagePileId}&format=json`,
 		).then( r => r.json() );
 		if ( pileJson.wiki !== mw.config.get( 'wgDBname' ) ) {
 			await OO.ui.alert( 'That PagePile does not belong to this wiki!' ); // TODO i18n
@@ -444,7 +444,7 @@
 					( this.loadedEntityData ? this.totalGetEntitiesCalls : 0 ) +
 					this.indexEntity * this.numberStatementsPerEntity +
 					this.indexStatement ) /
-				this.totalApiCalls
+				this.totalApiCalls,
 		);
 	};
 	StatementsProgressBarWidget.prototype.finishedLoadingEntityIds = function () {
@@ -693,7 +693,7 @@
 									return [ new Statement(
 										new Claim( newStatement.getClaim().getMainSnak(), newStatement.getClaim().getQualifiers(), guidGenerator.newGuid() ),
 										newStatement.getReferences(),
-										newStatement.getRank()
+										newStatement.getRank(),
 									) ];
 								} );
 							statementWidget.getRemovals = () => [];
@@ -706,7 +706,7 @@
 							await statementWidget.submit( entityData[ entityId ].lastrevid );
 
 							this.statementsProgressBarWidget.finishedStatements(
-								statementWidget.getData().length // for the progress, we also count statements that didn’t change
+								statementWidget.getData().length, // for the progress, we also count statements that didn’t change
 							);
 						}
 
