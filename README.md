@@ -6,15 +6,12 @@ See the [on-wiki documentation](https://commons.wikimedia.org/wiki/Special:MyLan
 
 ## Development
 
-For local development, I usually load [this page](https://test-commons.wikimedia.org/wiki/Special:BlankPage?acdcShow=1) in Firefox,
-then open the Scratchpad (<kbd><kbd>Shift</kbd>+<kbd>F4</kbd></kbd>), open `acdc.js` and run it (<kbd><kbd>Ctrl</kbd>+<kbd>R</kbd></kbd>).
-After making code changes, I reload the file in Scratchpad
-(it usually remembers the file name, making this as simple as <kbd><kbd>Ctrl</kbd>+<kbd>O</kbd></kbd>, then <kbd><kbd>Enter</kbd></kbd>)
-and run it again.
-(I typically don’t edit in Scratchpad directly.)
-Similar steps should be possible in other browsers –
-they just need to support all the modern JavaScript features AC/DC uses,
-without Babel transpilation or core-js polyfills.
+For local development, I usually load `manifest.json` as a temporary extension in `about:debugging`,
+then open [this page](https://test-commons.wikimedia.org/wiki/Special:BlankPage?acdcShow=1) and test the gadget there.
+Code changes to `acdc.js` become effective after a reload of the page
+(there’s no need to reload the temporary extension).
+Note that this is only possible in Firefox –
+I’m not aware of a way for a WebExtension to run code in the page content in Chrome or other browsers.
 
 For deployment, run `make all` to build the Commons version of the script,
 copy `dist/main.js` to the clipboard and save that on [`MediaWiki:Gadget-ACDC.js`](https://commons.wikimedia.org/wiki/MediaWiki:Gadget-ACDC.js).

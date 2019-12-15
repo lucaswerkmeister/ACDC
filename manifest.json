@@ -1,0 +1,17 @@
+{
+	"manifest_version": 2,
+	"name": "AC/DC",
+	"version": "0.1.0",
+	"description": "Wikimedia Commons user script to add a collection of structured data statements to a set of media files.",
+	"content_scripts": [
+		{
+			"matches": [
+				"*://commons.wikimedia.org/*",
+				"*://test-commons.wikimedia.org/*",
+				"*://commons.wikimedia.beta.wmflabs.org/*"
+			],
+			"js": [ "loadAcdc.js" ]
+		}
+	],
+	"web_accessible_resources": [ "acdc.js" ]
+}
