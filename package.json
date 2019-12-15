@@ -12,7 +12,7 @@
     "@wdio/mocha-framework": "^5.12.1",
     "@wdio/spec-reporter": "^5.16.11",
     "babel-loader": "^8.0.6",
-    "chromedriver": "^77.0.0",
+    "chromedriver": "^79.0.0",
     "core-js": "^3.2.1",
     "eslint": "^6.3.0",
     "eslint-config-wikimedia": "^0.14.1",
