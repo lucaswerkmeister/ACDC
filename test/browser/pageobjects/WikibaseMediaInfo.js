@@ -1,7 +1,7 @@
 class WikibaseMediaInfo {
 
 	get entitySelectorEntry() {
-		return $( '.wbmi-entityselector-itemcontent' );
+		return $( '.wbmi-input-widget__autocomplete' );
 	}
 
 }
