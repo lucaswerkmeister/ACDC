@@ -28,6 +28,7 @@
 			'gadget-acdc-load-category': 'Load category',
 			'gadget-acdc-load-pagepile': 'Load PagePile',
 			'gadget-acdc-load-category-title': 'Category title:',
+			'gadget-acdc-load-category-placeholder': 'Category:Example',
 			'gadget-acdc-load-pagepile-id': 'PagePile ID:',
 			'gadget-acdc-load-pagepile-error-wrong-wiki': 'That PagePile does not belong to this wiki!',
 			'gadget-acdc-load-pagepile-warning-large-pagepile':
@@ -36,6 +37,8 @@
 			'gadget-acdc-button-stop-edit': 'Stop',
 			'gadget-acdc-field-files': 'Files to edit',
 			'gadget-acdc-field-statements': 'Statements to add',
+			'gadget-acdc-file-placeholder': 'File:Example.png',
+			'gadget-acdc-files-placeholder': 'File:Example.png | File:Example.jpg',
 			'gadget-acdc-error-duplicate-statements':
 				'You specified multiple statements with the same main value, ' +
 				'which is not supported. ' +
@@ -201,7 +204,7 @@
 	 */
 	function FileInputWidget( config ) {
 		FileInputWidget.super.call( this, $.extend( {
-			placeholder: 'File:Example.png',
+			placeholder: $.i18n( 'gadget-acdc-file-placeholder' ),
 		}, config ) );
 		OO.ui.mixin.LookupElement.call( this, $.extend( {
 			showPendingRequest: false,
@@ -283,7 +286,7 @@
 		FilesWidget.super.call( this, $.extend( {
 			allowArbitrary: true,
 			inputWidget: new FileInputWidget( $.extend( {
-				placeholder: 'File:Example.png | File:Example.jpg',
+				placeholder: $.i18n( 'gadget-acdc-files-placeholder' ),
 			}, config ) ),
 			icon: 'ellipsis',
 		}, config ) );
@@ -349,7 +352,7 @@
 			let categoryTitle = await OO.ui.prompt( $.i18n( 'gadget-acdc-load-category-title' ), {
 				size: 'medium',
 				textInput: {
-					placeholder: 'Category:Example',
+					placeholder: $.i18n( 'gadget-acdc-load-category-placeholder' ),
 					value: defaultCategory,
 				},
 			} );
