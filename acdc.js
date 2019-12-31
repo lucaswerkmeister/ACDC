@@ -15,11 +15,52 @@
 			'wikibase.serialization',
 			'mediawiki.api',
 			'mediawiki.util',
+			'mediawiki.Title',
+			'jquery.i18n',
 		] ),
 		ClaimGuidGenerator = wikibase.utilities.ClaimGuidGenerator,
 		{ Statement, Claim, PropertyNoValueSnak } = require( 'wikibase.datamodel' ),
 		{ StatementListDeserializer, StatementSerializer, StatementDeserializer } = require( 'wikibase.serialization' ),
 		{ StatementWidget, AddPropertyWidget } = require( 'wikibase.mediainfo.statements' );
+
+	await $.i18n().load( {
+		en: {
+			'gadget-acdc-load-category': 'Load category',
+			'gadget-acdc-load-pagepile': 'Load PagePile',
+			'gadget-acdc-load-category-title': 'Category title:',
+			'gadget-acdc-load-pagepile-id': 'PagePile ID:',
+			'gadget-acdc-load-pagepile-error-wrong-wiki': 'That PagePile does not belong to this wiki!',
+			'gadget-acdc-load-pagepile-warning-large-pagepile':
+				'This PagePile contains {{PLURAL:$1|$1 file|$1 files}}, ' +
+				'using it will take a while. Are you sure?',
+			'gadget-acdc-button-stop-edit': 'Stop',
+			'gadget-acdc-field-files': 'Files to edit',
+			'gadget-acdc-field-statements': 'Statements to add',
+			'gadget-acdc-error-duplicate-statements':
+				'You specified multiple statements with the same main value, ' +
+				'which is not supported. ' +
+				'If you need to make multiple changes to one statement, merge them. ' +
+				'If you really need to add multiple statements with the same value, ' +
+				'you’ll have to find another way (sorry).',
+		},
+	} );
+	/* TODO use the below version once T241639 is fixed and deployed
+	await $.i18n().load(
+		new mw.Title( 'MediaWiki:Gadget-ACDC-i18n.json' ).getUrl() +
+			'?action=raw&ctype=application/json',
+		// note: we can’t pass the parameters into getUrl() –
+		// we need a URL that ends in .json (otherwise $.i18n thinks it’s a directory),
+		// so it has to be /wiki/….json?action=…, not /w/index.php?title=….json&action=…
+		// (and yes, this means the i18n only works on wikis with nice URLs)
+	);
+	*/
+	try {
+		await $.i18n().load( await $.getJSON(
+			new mw.Title( 'MediaWiki:Gadget-ACDC-i18n.json' ).getUrl( { action: 'raw', ctype: 'application/json' } ),
+		) );
+	} catch ( e ) {
+		// ignore
+	}
 
 	/**
 	 * Maps titles to entity IDs.
@@ -257,11 +298,11 @@
 		// we turn the ellipsis icon into a “button” opening a popup menu with currently one button
 		this.categoryButton = new OO.ui.ButtonWidget( {
 			icon: 'tag',
-			label: 'Load category', // TODO i18n
+			label: $.i18n( 'gadget-acdc-load-category' ),
 		} );
 		this.pagePileButton = new OO.ui.ButtonWidget( {
 			icon: 'listBullet',
-			label: 'Load PagePile', // TODO i18n
+			label: $.i18n( 'gadget-acdc-load-pagepile' ),
 		} );
 		this.menuPopup = new OO.ui.PopupWidget( {
 			$content: new OO.ui.StackLayout( {
@@ -305,7 +346,7 @@
 				defaultCategory = null;
 			}
 
-			let categoryTitle = await OO.ui.prompt( 'Category title:', { // TODO i18n
+			let categoryTitle = await OO.ui.prompt( $.i18n( 'gadget-acdc-load-category-title' ), {
 				size: 'medium',
 				textInput: {
 					placeholder: 'Category:Example',
@@ -330,7 +371,7 @@
 
 		this.pagePileButton.on( 'click', async () => {
 			this.menuPopup.toggle( false );
-			const pagePileId = await OO.ui.prompt( 'PagePile ID:', { // TODO i18n
+			const pagePileId = await OO.ui.prompt( $.i18n( 'gadget-acdc-load-pagepile-id' ), {
 				textInput: {
 					placeholder: '12345',
 					type: 'number',
@@ -376,7 +417,7 @@
 			`https://tools.wmflabs.org/pagepile/api.php?action=get_data&id=${pagePileId}&format=json`,
 		).then( r => r.json() );
 		if ( pileJson.wiki !== mw.config.get( 'wgDBname' ) ) {
-			await OO.ui.alert( 'That PagePile does not belong to this wiki!' ); // TODO i18n
+			await OO.ui.alert( $.i18n( 'gadget-acdc-load-pagepile-error-wrong-wiki' ) );
 			return false;
 		}
 
@@ -384,7 +425,8 @@
 			.filter( page => page.startsWith( 'File:' ) );
 		if ( files.length >= 100 ) {
 			const confirmation = await OO.ui.confirm(
-				`This PagePile contains ${files.length} files, using it will take a while. Are you sure?` ); // TODO i18n
+				$.i18n( 'gadget-acdc-load-pagepile-warning-large-pagepile', files.length ),
+			);
 			if ( !confirmation ) {
 				return false;
 			}
@@ -511,7 +553,7 @@
 		},
 		{
 			action: 'stop',
-			label: 'Stop', // TODO i18n
+			label: $.i18n( 'gadget-acdc-button-stop-edit' ),
 			flags: [ 'primary', 'destructive' ],
 			modes: [ 'save' ],
 		},
@@ -578,13 +620,13 @@
 		// TODO we should also updateSize when the AddPropertyWidget enters/leaves editing mode, but it doesn’t emit an event for that yet
 
 		const filesField = new OO.ui.FieldLayout( this.filesWidget, {
-			label: 'Files to edit', // TODO i18n
+			label: $.i18n( 'gadget-acdc-field-files' ),
 			align: 'top',
 			classes: [ 'acdc-statementsDialog-filesField' ],
 		} );
 		filesField.$header.wrap( '<h3>' );
 		const statementsField = new OO.ui.FieldLayout( addPropertyWidget, {
-			label: 'Statements to add', // TODO i18n
+			label: $.i18n( 'gadget-acdc-field-statements' ),
 			align: 'top',
 			classes: [ 'acdc-statementsDialog-statementsField' ],
 		} );
@@ -607,11 +649,7 @@
 
 		this.duplicateStatementsError = new OO.ui.MessageWidget( {
 			type: 'error',
-			label: 'You specified multiple statements with the same main value, ' +
-				'which is not supported. ' +
-				'If you need to make multiple changes to one statement, merge them. ' +
-				'If you really need to add multiple statements with the same value, ' +
-				'you’ll have to find another way (sorry).', // TODO i18n
+			label: $.i18n( 'gadget-acdc-error-duplicate-statements' ),
 		} );
 		this.duplicateStatementsError.toggle( false ); // see updateShowDuplicateStatementsError
 		this.$foot.append( this.duplicateStatementsError.$element );
