@@ -153,7 +153,7 @@
 			entityId: '',
 			propertyId: 'P12345',
 			isDefaultProperty: false,
-			properties: { P12345: 'wikibase-entityid' },
+			propertyType: 'wikibase-item',
 		} );
 		if ( !( 'state' in statementWidget &&
 				statementWidget.state.propertyId === 'P12345' ) ) {
@@ -584,7 +584,6 @@
 				propertyId: id,
 				isDefaultProperty: false,
 				propertyType: datatype,
-				properties: { [ id ]: 'wikibase-entityid' }, // backwards compatibility until d69067b8da23dd8f0e98abc5694f38b59cb05e0f is deployed everywhere
 				$overlay: this.$overlay,
 				tags: this.tags,
 			} );
