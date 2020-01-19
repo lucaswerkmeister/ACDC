@@ -177,7 +177,7 @@ describe( 'AC/DC', () => {
 			await ACDC.submit();
 
 			// wait until no longer displayed ⇒ done
-			await dialog.waitForDisplayed( /* ms: */ undefined, /* reverse: */ true );
+			await dialog.waitForDisplayed( /* ms: */ 30000, /* reverse: */ true );
 			const entityData = await browser.executeAsync( async ( entityId, done ) => {
 				const api = new mediaWiki.Api();
 				done( ( await api.get( {
@@ -238,7 +238,7 @@ describe( 'AC/DC', () => {
 			await ACDC.submit();
 
 			// wait until no longer displayed ⇒ done
-			await dialog.waitForDisplayed( /* ms: */ undefined, /* reverse: */ true );
+			await dialog.waitForDisplayed( /* ms: */ 30000, /* reverse: */ true );
 
 			const [ entityData1, entityData2 ] = await browser.executeAsync(
 				async ( entityId1, entityId2, done ) => {
@@ -305,7 +305,7 @@ describe( 'AC/DC', () => {
 			await ACDC.submit();
 
 			// wait until no longer displayed ⇒ done
-			await dialog.waitForDisplayed( /* ms: */ undefined, /* reverse: */ true );
+			await dialog.waitForDisplayed( /* ms: */ 30000, /* reverse: */ true );
 			const entityData = await browser.executeAsync( async ( entityId, done ) => {
 				const api = new mediaWiki.Api();
 				done( ( await api.get( {
