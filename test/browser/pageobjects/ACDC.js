@@ -28,7 +28,7 @@ class ACDC {
 
 	get addStatementInput() {
 		return this.dialog
-			.then( dialog => dialog.$( '.wbmi-entityview-add-statement-property .oo-ui-inputWidget-input' ) );
+			.then( dialog => dialog.$( '.wbmi-entityview-add-statement-property-input .oo-ui-inputWidget-input' ) );
 	}
 
 	get submitButton() {

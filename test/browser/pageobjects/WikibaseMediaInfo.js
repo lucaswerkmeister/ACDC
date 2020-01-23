@@ -1,7 +1,7 @@
 class WikibaseMediaInfo {
 
 	get entitySelectorEntry() {
-		return $( '.wbmi-input-widget__autocomplete' );
+		return $( '.oo-ui-menuOptionWidget' );
 	}
 
 }
