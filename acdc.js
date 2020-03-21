@@ -47,7 +47,6 @@
 				'you’ll have to find another way (sorry).',
 		},
 	} );
-	/* TODO use the below version once T241639 is fixed and deployed
 	await $.i18n().load(
 		new mw.Title( 'MediaWiki:Gadget-ACDC-i18n.json' ).getUrl() +
 			'?action=raw&ctype=application/json',
@@ -56,14 +55,6 @@
 		// so it has to be /wiki/….json?action=…, not /w/index.php?title=….json&action=…
 		// (and yes, this means the i18n only works on wikis with nice URLs)
 	);
-	*/
-	try {
-		await $.i18n().load( await $.getJSON(
-			new mw.Title( 'MediaWiki:Gadget-ACDC-i18n.json' ).getUrl( { action: 'raw', ctype: 'application/json' } ),
-		) );
-	} catch ( e ) {
-		// ignore
-	}
 
 	/**
 	 * Maps titles to entity IDs.
