@@ -19,6 +19,11 @@ Afterwards, copy the page revision from the “permanent link” in the sidebar
 and tag the current commit as <code>r<var>revid</var></code>,
 then push `master` and that tag to `origin`.
 
+When introducing new dependencies in `package.json`,
+add them to `dependencies` if they’re necessary to build the gadget (`make all`),
+or to `devDependencies` if they’re only necessary to test it (`make check`).
+In other words, `rm -rf node_modules/ && npm install --prod && make all` should always succeed.
+
 ## License
 
 As this script is published on Wikimedia Commons,
