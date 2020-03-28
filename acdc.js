@@ -659,103 +659,15 @@
 				return new OO.ui.Process( async () => {
 					this.actions.setMode( 'save' );
 
-					const titles = this.filesWidget.getTitles();
-					this.statementsProgressBarWidget.enable(
-						titles.length,
-						this.statementWidgets.reduce( ( acc, statementWidget ) => acc + statementWidget.getData().length, 0 ),
-					);
+					const finished = await this.save().catch( error => {
+						console.error( 'AC/DC: error while saving', error );
+						throw new OO.ui.Error( error, { recoverable: false } );
+					} );
 
-					await Promise.all( this.statementWidgets.map(
-						statementWidget => statementWidget.setDisabled( true ).setEditing( false ) ) );
-
-					const entityIds = await titlesToEntityIds( titles );
-					this.statementsProgressBarWidget.finishedLoadingEntityIds();
-
-					const entityData = await entityIdsToData( Object.values( entityIds ), [ 'info', 'claims' ] );
-					this.statementsProgressBarWidget.finishedLoadingEntityData();
-
-					const api = new mw.Api(),
-						statementListDeserializer = new StatementListDeserializer(),
-						statementSerializer = new StatementSerializer(),
-						statementDeserializer = new StatementDeserializer();
-					for ( const [ title, entityId ] of Object.entries( entityIds ) ) {
-						const guidGenerator = new ClaimGuidGenerator( entityId );
-
-						for ( const statementWidget of this.statementWidgets ) {
-							const previousStatements = statementListDeserializer.deserialize(
-								entityData[ entityId ].statements[ statementWidget.state.propertyId ] || [] );
-							const changedStatements = statementWidget.getData().toArray()
-								.flatMap( newStatement => {
-									for ( const previousStatement of previousStatements.toArray() ) {
-										if ( newStatement.getClaim().getMainSnak().equals( previousStatement.getClaim().getMainSnak() ) ) {
-											// main value matches
-											if ( newStatement.equals( previousStatement ) ) {
-												// full match, do nothing
-												return [];
-											} else {
-												// potentially add qualifiers and bump rank (on a copy of the existing statement)
-												// TODO we don’t support references here yet (but neither does WikibaseMediaInfo as of writing this)
-												const updatedStatement = statementDeserializer.deserialize(
-													statementSerializer.serialize( previousStatement ) );
-
-												updatedStatement.getClaim().getQualifiers().merge( newStatement.getClaim().getQualifiers() );
-
-												if ( newStatement.getRank() !== Statement.RANK.NORMAL &&
-													updatedStatement.getRank() === Statement.RANK.NORMAL ) {
-													updatedStatement.setRank( newStatement.getRank() );
-												}
-
-												if ( updatedStatement.equals( previousStatement ) ) {
-													// not equal but no change from our side, do nothing
-													return [];
-												} else {
-													// adding some qualifiers or bumping rank
-													return [ updatedStatement ];
-												}
-											}
-										}
-									}
-									// no existing statement matched, add new
-									return [ new Statement(
-										new Claim( newStatement.getClaim().getMainSnak(), newStatement.getClaim().getQualifiers(), guidGenerator.newGuid() ),
-										newStatement.getReferences(),
-										newStatement.getRank(),
-									) ];
-								} );
-
-							for ( const changedStatement of changedStatements ) {
-								if ( this.stopped ) {
-									this.stopped = false;
-									return;
-								}
-
-								await api.postWithEditToken( api.assertCurrentUser( {
-									action: 'wbsetclaim',
-									claim: JSON.stringify( statementSerializer.serialize( changedStatement ) ),
-									baserevid: entityData[ entityId ].lastrevid,
-									bot: 1,
-									tags: this.tags,
-									format: 'json',
-									formatversion: '2',
-									errorformat: 'plaintext',
-								} ) ).catch( ( ...args ) => { throw args; } ); // jQuery can reject with multiple errors, native promises can’t
-								// TODO handle API errors better
-							}
-
-							this.statementsProgressBarWidget.finishedStatements(
-								statementWidget.getData().length, // for the progress, we also count statements that didn’t change
-							);
-						}
-
-						this.filesWidget.removeTagByData( title );
-						this.statementsProgressBarWidget.finishedEntity();
+					if ( finished ) {
+						this.actions.setMode( 'edit' );
+						this.close();
 					}
-
-					this.statementsProgressBarWidget.finished();
-					// leave the dialog open for a second so the user has a chance to see the finished progress bar
-					await new Promise( resolve => setTimeout( resolve, 1000 ) );
-					this.actions.setMode( 'edit' );
-					this.close();
 				} ).next( async () => {
 					// regardless whether we finished or stopped, remove the progress bar again
 					this.statementsProgressBarWidget.disable();
@@ -776,6 +688,109 @@
 			// it would be nice if there was a better way to do this :/
 			this.executeAction( action.getAction() );
 		}
+	};
+	/**
+	 * Saves changes to the statements.
+	 * @return {boolean} Whether the save finished completely (true) or was stopped prematurely (false).
+	 */
+	StatementsDialog.prototype.save = async function () {
+		const titles = this.filesWidget.getTitles();
+		this.statementsProgressBarWidget.enable(
+			titles.length,
+			this.statementWidgets.reduce( ( acc, statementWidget ) => acc + statementWidget.getData().length, 0 ),
+		);
+
+		await Promise.all( this.statementWidgets.map(
+			statementWidget => statementWidget.setDisabled( true ).setEditing( false ) ) );
+
+		const entityIds = await titlesToEntityIds( titles );
+		this.statementsProgressBarWidget.finishedLoadingEntityIds();
+
+		const entityData = await entityIdsToData( Object.values( entityIds ), [ 'info', 'claims' ] );
+		this.statementsProgressBarWidget.finishedLoadingEntityData();
+
+		const api = new mw.Api(),
+			statementListDeserializer = new StatementListDeserializer(),
+			statementSerializer = new StatementSerializer(),
+			statementDeserializer = new StatementDeserializer();
+		for ( const [ title, entityId ] of Object.entries( entityIds ) ) {
+			const guidGenerator = new ClaimGuidGenerator( entityId );
+
+			for ( const statementWidget of this.statementWidgets ) {
+				const previousStatements = statementListDeserializer.deserialize(
+					entityData[ entityId ].statements[ statementWidget.state.propertyId ] || [] );
+				const changedStatements = statementWidget.getData().toArray()
+					.flatMap( newStatement => {
+						for ( const previousStatement of previousStatements.toArray() ) {
+							if ( newStatement.getClaim().getMainSnak().equals( previousStatement.getClaim().getMainSnak() ) ) {
+								// main value matches
+								if ( newStatement.equals( previousStatement ) ) {
+									// full match, do nothing
+									return [];
+								} else {
+									// potentially add qualifiers and bump rank (on a copy of the existing statement)
+									// TODO we don’t support references here yet (but neither does WikibaseMediaInfo as of writing this)
+									const updatedStatement = statementDeserializer.deserialize(
+										statementSerializer.serialize( previousStatement ) );
+
+									updatedStatement.getClaim().getQualifiers().merge( newStatement.getClaim().getQualifiers() );
+
+									if ( newStatement.getRank() !== Statement.RANK.NORMAL &&
+										updatedStatement.getRank() === Statement.RANK.NORMAL ) {
+										updatedStatement.setRank( newStatement.getRank() );
+									}
+
+									if ( updatedStatement.equals( previousStatement ) ) {
+										// not equal but no change from our side, do nothing
+										return [];
+									} else {
+										// adding some qualifiers or bumping rank
+										return [ updatedStatement ];
+									}
+								}
+							}
+						}
+						// no existing statement matched, add new
+						return [ new Statement(
+							new Claim( newStatement.getClaim().getMainSnak(), newStatement.getClaim().getQualifiers(), guidGenerator.newGuid() ),
+							newStatement.getReferences(),
+							newStatement.getRank(),
+						) ];
+					} );
+
+				for ( const changedStatement of changedStatements ) {
+					if ( this.stopped ) {
+						this.stopped = false;
+						return false;
+					}
+
+					await api.postWithEditToken( api.assertCurrentUser( {
+						action: 'wbsetclaim',
+						claim: JSON.stringify( statementSerializer.serialize( changedStatement ) ),
+						baserevid: entityData[ entityId ].lastrevid,
+						bot: 1,
+						tags: this.tags,
+						format: 'json',
+						formatversion: '2',
+						errorformat: 'plaintext',
+					} ) ).catch( ( ...args ) => { throw args; } ); // jQuery can reject with multiple errors, native promises can’t
+					// TODO handle API errors better
+				}
+
+				this.statementsProgressBarWidget.finishedStatements(
+					statementWidget.getData().length, // for the progress, we also count statements that didn’t change
+				);
+			}
+
+			this.filesWidget.removeTagByData( title );
+			this.statementsProgressBarWidget.finishedEntity();
+		}
+
+		this.statementsProgressBarWidget.finished();
+		// leave the dialog open for a second so the user has a chance to see the finished progress bar
+		await new Promise( resolve => setTimeout( resolve, 1000 ) );
+
+		return true;
 	};
 	StatementsDialog.prototype.hasDuplicateStatements = function () {
 		return Object.values( this.hasDuplicateStatementsPerProperty ).some( b => b );
