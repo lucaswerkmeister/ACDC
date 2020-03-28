@@ -131,14 +131,6 @@
 		throw new Error( `${component} seems to have changed incompatibly, AC/DC must be updated before it can be safely used!` );
 	}
 
-	function sanityCheckStatementWidgetPrototype() {
-		if ( !( 'getChanges' in StatementWidget.prototype &&
-				'getRemovals' in StatementWidget.prototype ) ) {
-			// if StatementWidget doesn’t use these methods, it’ll make wrong edits
-			failSanityCheck( 'StatementWidget.prototype' );
-		}
-	}
-
 	function sanityCheckStatementWidgetPropertyId() {
 		const statementWidget = new StatementWidget( {
 			entityId: '',
@@ -165,7 +157,6 @@
 		}
 	}
 
-	sanityCheckStatementWidgetPrototype();
 	sanityCheckStatementWidgetPropertyId();
 	sanityCheckStatementEquals();
 
@@ -674,13 +665,17 @@
 						this.statementWidgets.reduce( ( acc, statementWidget ) => acc + statementWidget.getData().length, 0 ),
 					);
 
+					await Promise.all( this.statementWidgets.map(
+						statementWidget => statementWidget.setDisabled( true ).setEditing( false ) ) );
+
 					const entityIds = await titlesToEntityIds( titles );
 					this.statementsProgressBarWidget.finishedLoadingEntityIds();
 
 					const entityData = await entityIdsToData( Object.values( entityIds ), [ 'info', 'claims' ] );
 					this.statementsProgressBarWidget.finishedLoadingEntityData();
 
-					const statementListDeserializer = new StatementListDeserializer(),
+					const api = new mw.Api(),
+						statementListDeserializer = new StatementListDeserializer(),
 						statementSerializer = new StatementSerializer(),
 						statementDeserializer = new StatementDeserializer();
 					for ( const [ title, entityId ] of Object.entries( entityIds ) ) {
@@ -689,7 +684,7 @@
 						for ( const statementWidget of this.statementWidgets ) {
 							const previousStatements = statementListDeserializer.deserialize(
 								entityData[ entityId ].statements[ statementWidget.state.propertyId ] || [] );
-							statementWidget.getChanges = () => statementWidget.getData().toArray()
+							const changedStatements = statementWidget.getData().toArray()
 								.flatMap( newStatement => {
 									for ( const previousStatement of previousStatements.toArray() ) {
 										if ( newStatement.getClaim().getMainSnak().equals( previousStatement.getClaim().getMainSnak() ) ) {
@@ -727,14 +722,25 @@
 										newStatement.getRank(),
 									) ];
 								} );
-							statementWidget.getRemovals = () => [];
 
-							if ( this.stopped ) {
-								this.stopped = false;
-								return;
+							for ( const changedStatement of changedStatements ) {
+								if ( this.stopped ) {
+									this.stopped = false;
+									return;
+								}
+
+								await api.postWithEditToken( api.assertCurrentUser( {
+									action: 'wbsetclaim',
+									claim: JSON.stringify( statementSerializer.serialize( changedStatement ) ),
+									baserevid: entityData[ entityId ].lastrevid,
+									bot: 1,
+									tags: this.tags,
+									format: 'json',
+									formatversion: '2',
+									errorformat: 'plaintext',
+								} ) ).catch( ( ...args ) => { throw args; } ); // jQuery can reject with multiple errors, native promises can’t
+								// TODO handle API errors better
 							}
-
-							await statementWidget.submit( entityData[ entityId ].lastrevid );
 
 							this.statementsProgressBarWidget.finishedStatements(
 								statementWidget.getData().length, // for the progress, we also count statements that didn’t change

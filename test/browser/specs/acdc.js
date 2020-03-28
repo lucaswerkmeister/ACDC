@@ -133,12 +133,13 @@ describe( 'AC/DC', () => {
 					meta: 'tokens',
 					type: 'login',
 				} ) ).query.tokens.logintoken;
-				await api.post( {
+				username = ( await api.post( {
 					action: 'login',
 					lgname: username,
 					lgpassword: password,
 					lgtoken: token,
-				} );
+				} ) ).login.lgusername; // might differ from original username in case of bot password
+				mediaWiki.config.set( 'wgUserName', username );
 				done();
 			}, username, password );
 		} );
