@@ -59,7 +59,7 @@
 	/**
 	 * Maps titles to entity IDs.
 	 * @param {string[]} titles
-	 * @return {Object.<string,string>} map from title to entity ID
+	 * @return {Promise<Object.<string,string>>} map from title to entity ID
 	 */
 	async function titlesToEntityIds( titles ) {
 		const api = new mw.Api(),
@@ -79,7 +79,7 @@
 	 * Maps entity IDs to entity data.
 	 * @param {string[]} entityIds
 	 * @param {string[]} props
-	 * @return {Object.<string,Object>} map from entity ID to entity data
+	 * @return {Promise<Object.<string,Object>>} map from entity ID to entity data
 	 */
 	async function entityIdsToData( entityIds, props ) {
 		const api = new mw.Api(),
@@ -691,7 +691,7 @@
 	};
 	/**
 	 * Saves changes to the statements.
-	 * @return {boolean} Whether the save finished completely (true) or was stopped prematurely (false).
+	 * @return {Promise<boolean>} Whether the save finished completely (true) or was stopped prematurely (false).
 	 */
 	StatementsDialog.prototype.save = async function () {
 		const titles = this.filesWidget.getTitles();
