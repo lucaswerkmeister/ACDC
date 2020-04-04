@@ -36,10 +36,10 @@
 				'using it will take a while. Are you sure?',
 			'gadget-acdc-button-stop-edit': 'Stop',
 			'gadget-acdc-field-files': 'Files to edit',
-			'gadget-acdc-field-statements': 'Statements to add',
+			'gadget-acdc-field-statements-to-add': 'Statements to add',
 			'gadget-acdc-file-placeholder': 'File:Example.png',
 			'gadget-acdc-files-placeholder': 'File:Example.png | File:Example.jpg',
-			'gadget-acdc-error-duplicate-statements':
+			'gadget-acdc-error-duplicate-statements-to-add':
 				'You specified multiple statements with the same main value, ' +
 				'which is not supported. ' +
 				'If you need to make multiple changes to one statement, merge them. ' +
@@ -555,13 +555,13 @@
 		this.filesWidget.connect( this, { change: 'updateCanSave' } );
 		this.filesWidget.connect( this, { change: 'updateSize' } );
 
-		this.hasDuplicateStatementsPerProperty = {};
-		this.statementWidgets = [];
-		const addPropertyWidget = new AddPropertyWidget( {
+		this.hasDuplicateStatementsToAddPerProperty = {};
+		this.statementToAddWidgets = [];
+		const addPropertyToAddWidget = new AddPropertyWidget( {
 			$overlay: this.$overlay,
 		} );
-		addPropertyWidget.on( 'choose', ( _widget, { id, datatype } ) => {
-			const statementWidget = new StatementWidget( {
+		addPropertyToAddWidget.on( 'choose', ( _widget, { id, datatype } ) => {
+			const statementToAddWidget = new StatementWidget( {
 				entityId: '', // this widget is reused for multiple entities, we inject the entity IDs on publish
 				propertyId: id,
 				isDefaultProperty: false,
@@ -569,12 +569,12 @@
 				$overlay: this.$overlay,
 				tags: this.tags,
 			} );
-			statementWidget.connect( this, { change: 'updateCanSave' } );
-			statementWidget.connect( this, { change: 'updateSize' } );
-			statementWidget.on( 'change', () => {
+			statementToAddWidget.connect( this, { change: 'updateCanSave' } );
+			statementToAddWidget.connect( this, { change: 'updateSize' } );
+			statementToAddWidget.on( 'change', () => {
 				// check if there are any duplicate statements for this property
-				this.hasDuplicateStatementsPerProperty[ id ] = false;
-				const itemWidgets = statementWidget.getItems();
+				this.hasDuplicateStatementsToAddPerProperty[ id ] = false;
+				const itemWidgets = statementToAddWidget.getItems();
 
 				for ( const itemWidget of itemWidgets ) {
 					itemWidget.$element.css( 'border-left', 'none' );
@@ -586,21 +586,21 @@
 					for ( let j = i + 1; j < itemWidgets.length; j++ ) {
 						const itemWidget2 = itemWidgets[ j ];
 						if ( itemWidget1.getData().getClaim().getMainSnak().equals( itemWidget2.getData().getClaim().getMainSnak() ) ) {
-							this.hasDuplicateStatementsPerProperty[ id ] = true;
+							this.hasDuplicateStatementsToAddPerProperty[ id ] = true;
 							itemWidget1.$element.css( 'border-left', '2px solid red' ); // TODO better way to indicate errors
 							itemWidget2.$element.css( 'border-left', '2px solid red' );
 						}
 					}
 				}
 
-				this.updateShowDuplicateStatementsError();
+				this.updateShowDuplicateStatementsToAddError();
 				this.updateCanSave();
 			} );
-			this.statementWidgets.push( statementWidget );
+			this.statementToAddWidgets.push( statementToAddWidget );
 
-			statementWidget.$element.insertBefore( addPropertyWidget.$element );
+			statementToAddWidget.$element.insertBefore( addPropertyToAddWidget.$element );
 		} );
-		addPropertyWidget.connect( this, { choose: 'updateSize' } );
+		addPropertyToAddWidget.connect( this, { choose: 'updateSize' } );
 		// TODO we should also updateSize when the AddPropertyWidget enters/leaves editing mode, but it doesn’t emit an event for that yet
 
 		const filesField = new OO.ui.FieldLayout( this.filesWidget, {
@@ -609,18 +609,18 @@
 			classes: [ 'acdc-statementsDialog-filesField' ],
 		} );
 		filesField.$header.wrap( '<h3>' );
-		const statementsField = new OO.ui.FieldLayout( addPropertyWidget, {
-			label: $.i18n( 'gadget-acdc-field-statements' ),
+		const statementsToAddField = new OO.ui.FieldLayout( addPropertyToAddWidget, {
+			label: $.i18n( 'gadget-acdc-field-statements-to-add' ),
 			align: 'top',
-			classes: [ 'acdc-statementsDialog-statementsField' ],
+			classes: [ 'acdc-statementsDialog-statementsToAddField' ],
 		} );
-		statementsField.$header.wrap( '<h3>' );
+		statementsToAddField.$header.wrap( '<h3>' );
 
 		this.content = new OO.ui.PanelLayout( {
 			content: [ new OO.ui.FieldsetLayout( {
 				items: [
 					filesField,
-					statementsField,
+					statementsToAddField,
 				],
 			} ) ],
 			padded: true,
@@ -631,12 +631,12 @@
 		this.statementsProgressBarWidget = new StatementsProgressBarWidget( {} );
 		this.$head.append( this.statementsProgressBarWidget.$element );
 
-		this.duplicateStatementsError = new OO.ui.MessageWidget( {
+		this.duplicateStatementsToAddError = new OO.ui.MessageWidget( {
 			type: 'error',
-			label: $.i18n( 'gadget-acdc-error-duplicate-statements' ),
+			label: $.i18n( 'gadget-acdc-error-duplicate-statements-to-add' ),
 		} );
-		this.duplicateStatementsError.toggle( false ); // see updateShowDuplicateStatementsError
-		this.$foot.append( this.duplicateStatementsError.$element );
+		this.duplicateStatementsToAddError.toggle( false ); // see updateShowDuplicateStatementsToAddError
+		this.$foot.append( this.duplicateStatementsToAddError.$element );
 	};
 	StatementsDialog.prototype.getSetupProcess = function ( data ) {
 		return StatementsDialog.super.prototype.getSetupProcess.call( this, data ).next( async () => {
@@ -697,11 +697,11 @@
 		const titles = this.filesWidget.getTitles();
 		this.statementsProgressBarWidget.enable(
 			titles.length,
-			this.statementWidgets.reduce( ( acc, statementWidget ) => acc + statementWidget.getData().length, 0 ),
+			this.statementToAddWidgets.reduce( ( acc, statementToAddWidget ) => acc + statementToAddWidget.getData().length, 0 ),
 		);
 
-		await Promise.all( this.statementWidgets.map(
-			statementWidget => statementWidget.setDisabled( true ).setEditing( false ) ) );
+		await Promise.all( this.statementToAddWidgets.map(
+			statementToAddWidget => statementToAddWidget.setDisabled( true ).setEditing( false ) ) );
 
 		const entityIds = await titlesToEntityIds( titles );
 		this.statementsProgressBarWidget.finishedLoadingEntityIds();
@@ -716,10 +716,10 @@
 		for ( const [ title, entityId ] of Object.entries( entityIds ) ) {
 			const guidGenerator = new ClaimGuidGenerator( entityId );
 
-			for ( const statementWidget of this.statementWidgets ) {
+			for ( const statementToAddWidget of this.statementToAddWidgets ) {
 				const previousStatements = statementListDeserializer.deserialize(
-					entityData[ entityId ].statements[ statementWidget.state.propertyId ] || [] );
-				const changedStatements = statementWidget.getData().toArray()
+					entityData[ entityId ].statements[ statementToAddWidget.state.propertyId ] || [] );
+				const changedStatements = statementToAddWidget.getData().toArray()
 					.flatMap( newStatement => {
 						for ( const previousStatement of previousStatements.toArray() ) {
 							if ( newStatement.getClaim().getMainSnak().equals( previousStatement.getClaim().getMainSnak() ) ) {
@@ -778,7 +778,7 @@
 				}
 
 				this.statementsProgressBarWidget.finishedStatements(
-					statementWidget.getData().length, // for the progress, we also count statements that didn’t change
+					statementToAddWidget.getData().length, // for the progress, we also count statements that didn’t change
 				);
 			}
 
@@ -792,19 +792,19 @@
 
 		return true;
 	};
-	StatementsDialog.prototype.hasDuplicateStatements = function () {
-		return Object.values( this.hasDuplicateStatementsPerProperty ).some( b => b );
+	StatementsDialog.prototype.hasDuplicateStatementsToAdd = function () {
+		return Object.values( this.hasDuplicateStatementsToAddPerProperty ).some( b => b );
 	};
 	StatementsDialog.prototype.updateCanSave = function () {
 		this.actions.setAbilities( {
 			save: this.filesWidget.getTitles().length &&
-				this.statementWidgets.some(
-					statementWidget => statementWidget.getData().length ) &&
-				!this.hasDuplicateStatements(),
+				this.statementToAddWidgets.some(
+					statementToAddWidget => statementToAddWidget.getData().length ) &&
+				!this.hasDuplicateStatementsToAdd(),
 		} );
 	};
-	StatementsDialog.prototype.updateShowDuplicateStatementsError = function () {
-		this.duplicateStatementsError.toggle( this.hasDuplicateStatements() );
+	StatementsDialog.prototype.updateShowDuplicateStatementsToAddError = function () {
+		this.duplicateStatementsToAddError.toggle( this.hasDuplicateStatementsToAdd() );
 	};
 	StatementsDialog.prototype.getBodyHeight = function () {
 		// we ceil the body height to the next multiple of 200 so it doesn’t change too often

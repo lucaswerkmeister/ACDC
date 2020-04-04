@@ -21,12 +21,12 @@ class ACDC {
 			.then( filesWidget => filesWidget.$( '.acdc-fileInputWidget-input' ) );
 	}
 
-	get addStatementButton() {
+	get addStatementToAddButton() {
 		return this.dialog
 			.then( dialog => dialog.$( '.wbmi-add-property .oo-ui-buttonElement-button' ) );
 	}
 
-	get addStatementInput() {
+	get addStatementToAddInput() {
 		return this.dialog
 			.then( dialog => dialog.$( '.wbmi-entityview-add-statement-property-input .oo-ui-inputWidget-input' ) );
 	}
@@ -46,10 +46,10 @@ class ACDC {
 			.then( tagItem => tagItem.getText() );
 	}
 
-	statementWidget( index /* 1-indexed */ ) {
+	statementToAddWidget( index /* 1-indexed */ ) {
 		return this.dialog
 			.then( dialog => new StatementWidget(
-				dialog.$( `.acdc-statementsDialog-statementsField
+				dialog.$( `.acdc-statementsDialog-statementsToAddField
                            .oo-ui-widget:nth-child(${index})
                            .wbmi-statements-widget` ) ) );
 	}
@@ -58,11 +58,11 @@ class ACDC {
 		await ( await this.fileInput ).setValue( value );
 	}
 
-	async addProperty( propertyId ) {
-		await ( await this.addStatementButton ).click();
-		const addStatementInput = await this.addStatementInput;
-		await addStatementInput.waitForDisplayed();
-		await addStatementInput.setValue( propertyId );
+	async addPropertyToAdd( propertyId ) {
+		await ( await this.addStatementToAddButton ).click();
+		const addStatementToAddInput = await this.addStatementToAddInput;
+		await addStatementToAddInput.waitForDisplayed();
+		await addStatementToAddInput.setValue( propertyId );
 		const propertyEntry = await WikibaseMediaInfo.entitySelectorEntry;
 		await propertyEntry.waitForDisplayed();
 		await propertyEntry.click();

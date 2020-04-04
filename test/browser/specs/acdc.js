@@ -168,12 +168,12 @@ describe( 'AC/DC', () => {
 			await ACDC.setFileInputValue( file );
 			await browser.keys( [ 'Enter' ] );
 
-			await ACDC.addProperty( propertyId );
+			await ACDC.addPropertyToAdd( propertyId );
 
-			const statementWidget = await ACDC.statementWidget( 1 );
-			await statementWidget.waitForDisplayed();
+			const statementToAddWidget = await ACDC.statementToAddWidget( 1 );
+			await statementToAddWidget.waitForDisplayed();
 
-			await statementWidget.addValue( value );
+			await statementToAddWidget.addValue( value );
 
 			await ACDC.submit();
 
@@ -229,12 +229,12 @@ describe( 'AC/DC', () => {
 			await ACDC.setFileInputValue( file2 );
 			await browser.keys( [ 'Enter' ] );
 
-			await ACDC.addProperty( propertyId );
+			await ACDC.addPropertyToAdd( propertyId );
 
-			const statementWidget = await ACDC.statementWidget( 1 );
-			await statementWidget.waitForDisplayed();
+			const statementToAddWidget = await ACDC.statementToAddWidget( 1 );
+			await statementToAddWidget.waitForDisplayed();
 
-			await statementWidget.addValue( value );
+			await statementToAddWidget.addValue( value );
 
 			await ACDC.submit();
 
@@ -296,12 +296,12 @@ describe( 'AC/DC', () => {
 			await ACDC.setFileInputValue( file );
 			await browser.keys( [ 'Enter' ] );
 
-			await ACDC.addProperty( propertyId );
+			await ACDC.addPropertyToAdd( propertyId );
 
-			const statementWidget = await ACDC.statementWidget( 1 );
-			await statementWidget.waitForDisplayed();
+			const statementToAddWidget = await ACDC.statementToAddWidget( 1 );
+			await statementToAddWidget.waitForDisplayed();
 
-			await statementWidget.addValue( value );
+			await statementToAddWidget.addValue( value );
 
 			await ACDC.submit();
 
