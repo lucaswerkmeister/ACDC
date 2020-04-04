@@ -1,6 +1,6 @@
 const WikibaseMediaInfo = require( './WikibaseMediaInfo' );
 
-class StatementsWidget {
+class StatementWidget {
 
 	constructor( element ) {
 		this.element = element;
@@ -24,4 +24,4 @@ class StatementsWidget {
 
 }
 
-module.exports = StatementsWidget;
+module.exports = StatementWidget;

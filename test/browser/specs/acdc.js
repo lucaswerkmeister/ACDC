@@ -170,10 +170,10 @@ describe( 'AC/DC', () => {
 
 			await ACDC.addProperty( propertyId );
 
-			const statementsWidget = await ACDC.statementsWidget( 1 );
-			await statementsWidget.waitForDisplayed();
+			const statementWidget = await ACDC.statementWidget( 1 );
+			await statementWidget.waitForDisplayed();
 
-			await statementsWidget.addValue( value );
+			await statementWidget.addValue( value );
 
 			await ACDC.submit();
 
@@ -231,10 +231,10 @@ describe( 'AC/DC', () => {
 
 			await ACDC.addProperty( propertyId );
 
-			const statementsWidget = await ACDC.statementsWidget( 1 );
-			await statementsWidget.waitForDisplayed();
+			const statementWidget = await ACDC.statementWidget( 1 );
+			await statementWidget.waitForDisplayed();
 
-			await statementsWidget.addValue( value );
+			await statementWidget.addValue( value );
 
 			await ACDC.submit();
 
@@ -298,10 +298,10 @@ describe( 'AC/DC', () => {
 
 			await ACDC.addProperty( propertyId );
 
-			const statementsWidget = await ACDC.statementsWidget( 1 );
-			await statementsWidget.waitForDisplayed();
+			const statementWidget = await ACDC.statementWidget( 1 );
+			await statementWidget.waitForDisplayed();
 
-			await statementsWidget.addValue( value );
+			await statementWidget.addValue( value );
 
 			await ACDC.submit();
 

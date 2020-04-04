@@ -1,5 +1,5 @@
 const WikibaseMediaInfo = require( './WikibaseMediaInfo' );
-const StatementsWidget = require( './StatementsWidget' );
+const StatementWidget = require( './StatementWidget' );
 
 class ACDC {
 
@@ -46,9 +46,9 @@ class ACDC {
 			.then( tagItem => tagItem.getText() );
 	}
 
-	statementsWidget( index /* 1-indexed */ ) {
+	statementWidget( index /* 1-indexed */ ) {
 		return this.dialog
-			.then( dialog => new StatementsWidget(
+			.then( dialog => new StatementWidget(
 				dialog.$( `.acdc-statementsDialog-statementsField
                            .oo-ui-widget:nth-child(${index})
                            .wbmi-statements-widget` ) ) );
