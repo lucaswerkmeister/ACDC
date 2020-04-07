@@ -102,8 +102,10 @@ describe( 'AC/DC', () => {
 			'File:ACDC test file 1.pdf': -1,
 			'File:ACDC test file 2.pdf': -1,
 		};
-		const wikibaseItemPropertyId = 'P694';
-		const itemId = 'Q15';
+		const wikibaseItemPropertyId1 = 'P694';
+		const wikibaseItemPropertyId2 = 'P707';
+		const itemId1 = 'Q15';
+		const itemId2 = 'Q21';
 
 		before( 'load page IDs', async () => {
 			const response = await bot.request( {
@@ -124,6 +126,9 @@ describe( 'AC/DC', () => {
 			}
 
 			await browser.url( '/wiki/Special:BlankPage?uselang=en&acdcShow=1' );
+			await browser.execute( () => {
+				window.acdcEnableRemoveFeature = true; // temporary
+			} );
 			await injectAcdc();
 
 			await browser.executeAsync( async ( username, password, done ) => {
@@ -147,8 +152,8 @@ describe( 'AC/DC', () => {
 		it( 'can add a single statement', async () => {
 			const file = 'File:ACDC test file 1.pdf';
 			const entityId = `M${filePageIds[ file ]}`;
-			const propertyId = wikibaseItemPropertyId;
-			const value = itemId;
+			const propertyId = wikibaseItemPropertyId1;
+			const value = itemId1;
 			// reset entity first
 			await browser.executeAsync( async ( entityId, done ) => {
 				const api = new mediaWiki.Api();
@@ -197,8 +202,8 @@ describe( 'AC/DC', () => {
 			const file2 = 'File:ACDC test file 2.pdf';
 			const entityId1 = `M${filePageIds[ file1 ]}`;
 			const entityId2 = `M${filePageIds[ file2 ]}`;
-			const propertyId = wikibaseItemPropertyId;
-			const value = itemId;
+			const propertyId = wikibaseItemPropertyId1;
+			const value = itemId1;
 			// reset entity first
 			await browser.executeAsync( async ( entityId1, entityId2, done ) => {
 				const api = new mediaWiki.Api();
@@ -264,9 +269,9 @@ describe( 'AC/DC', () => {
 		it( 'does not re-add an existing statement', async () => {
 			const file = 'File:ACDC test file 1.pdf';
 			const entityId = `M${filePageIds[ file ]}`;
-			const propertyId = wikibaseItemPropertyId;
+			const propertyId = wikibaseItemPropertyId1;
 			const statementId = `${entityId}$ed9b7656-45c8-9fb2-cd03-3e3cd7e80b08`;
-			const value = itemId;
+			const value = itemId1;
 
 			await browser.executeAsync( async ( entityId, propertyId, statementId, value, done ) => {
 				const api = new mediaWiki.Api();
@@ -317,6 +322,325 @@ describe( 'AC/DC', () => {
 
 			assert.strictEqual( entityData.statements[ propertyId ].length, 1 );
 			assert.strictEqual( entityData.statements[ propertyId ][ 0 ].id, statementId );
+		} );
+
+		it( 'can remove a single statement', async () => {
+			const file = 'File:ACDC test file 1.pdf';
+			const entityId = `M${filePageIds[ file ]}`;
+			const propertyId = wikibaseItemPropertyId1;
+			const statementId = `${entityId}$e7a7a919-e727-49d3-bfe3-2bc6e1eb5fc7`;
+			const value = itemId1;
+
+			await browser.executeAsync( async ( entityId, propertyId, statementId, value, done ) => {
+				const api = new mediaWiki.Api();
+				await api.postWithEditToken( {
+					action: 'wbeditentity',
+					id: entityId,
+					summary: 'browser test setup',
+					data: JSON.stringify( {
+						labels: { en: { value: 'test file for the AC/DC gadget', language: 'en' } },
+						claims: { [ propertyId ]: [ {
+							type: 'statement',
+							id: statementId,
+							mainsnak: { snaktype: 'value', property: propertyId, datavalue: {
+								type: 'wikibase-entityid',
+								value: { 'entity-type': 'item', id: value },
+							} },
+						} ] },
+					} ),
+					clear: true,
+				} );
+				done();
+			}, entityId, propertyId, statementId, value );
+
+			const dialog = await ACDC.dialog;
+			await dialog.waitForDisplayed();
+
+			await ACDC.setFileInputValue( file );
+			await browser.keys( [ 'Enter' ] );
+
+			await ACDC.addPropertyToRemove( propertyId );
+
+			const statementToRemoveWidget = await ACDC.statementToRemoveWidget( 1 );
+			await statementToRemoveWidget.waitForDisplayed();
+
+			await statementToRemoveWidget.addValue( value );
+
+			await ACDC.submit();
+
+			// wait until no longer displayed ⇒ done
+			await dialog.waitForDisplayed( /* ms: */ 30000, /* reverse: */ true );
+			const entityData = await browser.executeAsync( async ( entityId, done ) => {
+				const api = new mediaWiki.Api();
+				done( ( await api.get( {
+					action: 'wbgetentities',
+					ids: entityId,
+				} ) ).entities[ entityId ] );
+			}, entityId );
+
+			assert.deepStrictEqual( entityData.statements, [] ); // should be {} but see T222159
+		} );
+
+		it( 'can remove a single statement from two files', async () => {
+			const file1 = 'File:ACDC test file 1.pdf';
+			const file2 = 'File:ACDC test file 2.pdf';
+			const entityId1 = `M${filePageIds[ file1 ]}`;
+			const entityId2 = `M${filePageIds[ file2 ]}`;
+			const propertyId = wikibaseItemPropertyId1;
+			const statementId1 = `${entityId1}$7656a423-af3a-4c94-8b87-bd559931e60a`;
+			const statementId2 = `${entityId2}$1f67af57-36d9-46a6-ac8d-b20d44f7aed9`;
+			const value = itemId1;
+
+			await browser.executeAsync( async ( entityId1, entityId2, propertyId, statementId1, statementId2, value, done ) => {
+				const api = new mediaWiki.Api();
+				const promise1 = api.postWithEditToken( {
+					action: 'wbeditentity',
+					id: entityId1,
+					summary: 'browser test setup',
+					data: JSON.stringify( {
+						labels: { en: { value: 'test file for the AC/DC gadget', language: 'en' } },
+						claims: { [ propertyId ]: [ {
+							type: 'statement',
+							id: statementId1,
+							mainsnak: { snaktype: 'value', property: propertyId, datavalue: {
+								type: 'wikibase-entityid',
+								value: { 'entity-type': 'item', id: value },
+							} },
+						} ] },
+					} ),
+					clear: true,
+				} );
+				const promise2 = api.postWithEditToken( {
+					action: 'wbeditentity',
+					id: entityId2,
+					summary: 'browser test setup',
+					data: JSON.stringify( {
+						labels: { en: { value: 'test file for the AC/DC gadget', language: 'en' } },
+						claims: { [ propertyId ]: [ {
+							type: 'statement',
+							id: statementId2,
+							mainsnak: { snaktype: 'value', property: propertyId, datavalue: {
+								type: 'wikibase-entityid',
+								value: { 'entity-type': 'item', id: value },
+							} },
+						} ] },
+					} ),
+					clear: true,
+				} );
+				await Promise.all( [ promise1, promise2 ] );
+				done();
+			}, entityId1, entityId2, propertyId, statementId1, statementId2, value );
+
+			const dialog = await ACDC.dialog;
+			await dialog.waitForDisplayed();
+
+			await ACDC.setFileInputValue( file1 );
+			await browser.keys( [ 'Enter' ] );
+
+			await ACDC.setFileInputValue( file2 );
+			await browser.keys( [ 'Enter' ] );
+
+			await ACDC.addPropertyToRemove( propertyId );
+
+			const statementToRemoveWidget = await ACDC.statementToRemoveWidget( 1 );
+			await statementToRemoveWidget.waitForDisplayed();
+
+			await statementToRemoveWidget.addValue( value );
+
+			await ACDC.submit();
+
+			// wait until no longer displayed ⇒ done
+			await dialog.waitForDisplayed( /* ms: */ 30000, /* reverse: */ true );
+
+			const [ entityData1, entityData2 ] = await browser.executeAsync(
+				async ( entityId1, entityId2, done ) => {
+					const api = new mediaWiki.Api();
+					const entities = ( await api.get( {
+						action: 'wbgetentities',
+						ids: [ entityId1, entityId2 ],
+					} ) ).entities;
+					done( [ entities[ entityId1 ], entities[ entityId2 ] ] );
+				},
+				entityId1, entityId2,
+			);
+
+			assert.deepStrictEqual( entityData1.statements, [] ); // should be {} but see T222159
+			assert.deepStrictEqual( entityData2.statements, [] ); // should be {} but see T222159
+		} );
+
+		it( 'can remove multiple statements', async () => {
+			const file = 'File:ACDC test file 1.pdf';
+			const entityId = `M${filePageIds[ file ]}`;
+			const propertyId1 = wikibaseItemPropertyId1;
+			const propertyId2 = wikibaseItemPropertyId2;
+			const statementId1 = `${entityId}$fb7806eb-076e-47ad-9171-448b6dd5878b`;
+			const statementId2 = `${entityId}$ec941087-695f-41cc-b0cd-459827425c58`;
+			const statementId3 = `${entityId}$0717cf93-cc74-4ca9-b434-21209ce935d0`;
+			const value1 = itemId1;
+			const value2 = itemId2;
+
+			await browser.executeAsync( async ( entityId, propertyId1, propertyId2, statementId1, statementId2, statementId3, value1, value2, done ) => {
+				const api = new mediaWiki.Api();
+				await api.postWithEditToken( {
+					action: 'wbeditentity',
+					id: entityId,
+					summary: 'browser test setup',
+					data: JSON.stringify( {
+						labels: { en: { value: 'test file for the AC/DC gadget', language: 'en' } },
+						claims: {
+							[ propertyId1 ]: [
+								{
+									type: 'statement',
+									id: statementId1,
+									mainsnak: { snaktype: 'value', property: propertyId1, datavalue: {
+										type: 'wikibase-entityid',
+										value: { 'entity-type': 'item', id: value1 },
+									} },
+								},
+								{
+									type: 'statement',
+									id: statementId2,
+									mainsnak: { snaktype: 'value', property: propertyId1, datavalue: {
+										type: 'wikibase-entityid',
+										value: { 'entity-type': 'item', id: value2 },
+									} },
+								},
+							],
+							[ propertyId2 ]: [ {
+								type: 'statement',
+								id: statementId3,
+								mainsnak: { snaktype: 'value', property: propertyId2, datavalue: {
+									type: 'wikibase-entityid',
+									value: { 'entity-type': 'item', id: value1 },
+								} },
+							} ],
+						},
+					} ),
+					clear: true,
+				} );
+				done();
+			}, entityId, propertyId1, propertyId2, statementId1, statementId2, statementId3, value1, value2 );
+
+			const dialog = await ACDC.dialog;
+			await dialog.waitForDisplayed();
+
+			await ACDC.setFileInputValue( file );
+			await browser.keys( [ 'Enter' ] );
+
+			await ACDC.addPropertyToRemove( propertyId1 );
+
+			const statementToRemoveWidget1 = await ACDC.statementToRemoveWidget( 1 );
+			await statementToRemoveWidget1.waitForDisplayed();
+
+			await statementToRemoveWidget1.addValue( value1 );
+			await statementToRemoveWidget1.addValue( value2 );
+
+			await ACDC.addPropertyToRemove( propertyId2 );
+
+			const statementToRemoveWidget2 = await ACDC.statementToRemoveWidget( 2 );
+			await statementToRemoveWidget2.waitForDisplayed();
+
+			await statementToRemoveWidget2.addValue( value1 );
+
+			await ACDC.submit();
+
+			// wait until no longer displayed ⇒ done
+			await dialog.waitForDisplayed( /* ms: */ 30000, /* reverse: */ true );
+			const entityData = await browser.executeAsync( async ( entityId, done ) => {
+				const api = new mediaWiki.Api();
+				done( ( await api.get( {
+					action: 'wbgetentities',
+					ids: entityId,
+				} ) ).entities[ entityId ] );
+			}, entityId );
+
+			assert.deepStrictEqual( entityData.statements, [] ); // should be {} but see T222159
+		} );
+
+		it( 'does not remove other statements', async () => {
+			const file = 'File:ACDC test file 1.pdf';
+			const entityId = `M${filePageIds[ file ]}`;
+			const propertyId1 = wikibaseItemPropertyId1;
+			const propertyId2 = wikibaseItemPropertyId2;
+			const statementId1 = `${entityId}$fb7806eb-076e-47ad-9171-448b6dd5878b`;
+			const statementId2 = `${entityId}$ec941087-695f-41cc-b0cd-459827425c58`;
+			const statementId3 = `${entityId}$0717cf93-cc74-4ca9-b434-21209ce935d0`;
+			const value1 = itemId1;
+			const value2 = itemId2;
+
+			await browser.executeAsync( async ( entityId, propertyId1, propertyId2, statementId1, statementId2, statementId3, value1, value2, done ) => {
+				const api = new mediaWiki.Api();
+				await api.postWithEditToken( {
+					action: 'wbeditentity',
+					id: entityId,
+					summary: 'browser test setup',
+					data: JSON.stringify( {
+						labels: { en: { value: 'test file for the AC/DC gadget', language: 'en' } },
+						claims: {
+							[ propertyId1 ]: [
+								{
+									type: 'statement',
+									id: statementId1,
+									mainsnak: { snaktype: 'value', property: propertyId1, datavalue: {
+										type: 'wikibase-entityid',
+										value: { 'entity-type': 'item', id: value1 },
+									} },
+								},
+								{
+									type: 'statement',
+									id: statementId2,
+									mainsnak: { snaktype: 'value', property: propertyId1, datavalue: {
+										type: 'wikibase-entityid',
+										value: { 'entity-type': 'item', id: value2 },
+									} },
+								},
+							],
+							[ propertyId2 ]: [ {
+								type: 'statement',
+								id: statementId3,
+								mainsnak: { snaktype: 'value', property: propertyId2, datavalue: {
+									type: 'wikibase-entityid',
+									value: { 'entity-type': 'item', id: value1 },
+								} },
+							} ],
+						},
+					} ),
+					clear: true,
+				} );
+				done();
+			}, entityId, propertyId1, propertyId2, statementId1, statementId2, statementId3, value1, value2 );
+
+			const dialog = await ACDC.dialog;
+			await dialog.waitForDisplayed();
+
+			await ACDC.setFileInputValue( file );
+			await browser.keys( [ 'Enter' ] );
+
+			await ACDC.addPropertyToRemove( propertyId1 );
+
+			const statementToRemoveWidget = await ACDC.statementToRemoveWidget( 1 );
+			await statementToRemoveWidget.waitForDisplayed();
+
+			await statementToRemoveWidget.addValue( value1 );
+
+			await ACDC.submit();
+
+			// wait until no longer displayed ⇒ done
+			await dialog.waitForDisplayed( /* ms: */ 30000, /* reverse: */ true );
+			const entityData = await browser.executeAsync( async ( entityId, done ) => {
+				const api = new mediaWiki.Api();
+				done( ( await api.get( {
+					action: 'wbgetentities',
+					ids: entityId,
+				} ) ).entities[ entityId ] );
+			}, entityId );
+
+			assert.strictEqual( entityData.statements[ propertyId1 ].length, 1 );
+			assert.strictEqual( entityData.statements[ propertyId1 ][ 0 ].id, statementId2 );
+			assert.strictEqual( entityData.statements[ propertyId1 ][ 0 ].mainsnak.datavalue.value.id, value2 );
+			assert.strictEqual( entityData.statements[ propertyId2 ].length, 1 );
+			assert.strictEqual( entityData.statements[ propertyId2 ][ 0 ].id, statementId3 );
+			assert.strictEqual( entityData.statements[ propertyId2 ][ 0 ].mainsnak.datavalue.value.id, value1 );
 		} );
 	} );
 } );

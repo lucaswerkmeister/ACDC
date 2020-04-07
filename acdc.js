@@ -37,6 +37,7 @@
 			'gadget-acdc-button-stop-edit': 'Stop',
 			'gadget-acdc-field-files': 'Files to edit',
 			'gadget-acdc-field-statements-to-add': 'Statements to add',
+			'gadget-acdc-field-statements-to-remove': 'Statements to remove',
 			'gadget-acdc-file-placeholder': 'File:Example.png',
 			'gadget-acdc-files-placeholder': 'File:Example.png | File:Example.jpg',
 			'gadget-acdc-error-duplicate-statements-to-add':
@@ -45,6 +46,21 @@
 				'If you need to make multiple changes to one statement, merge them. ' +
 				'If you really need to add multiple statements with the same value, ' +
 				'you’ll have to find another way (sorry).',
+			'gadget-acdc-error-duplicate-statements-to-remove':
+				'You specified multiple statements to remove with the same main value, ' +
+				'which is not supported.',
+			'gadget-acdc-error-statement-with-qualifiers-to-remove':
+				'You specified a statement with qualifiers ' +
+				'in the “{{int:gadget-acdc-field-statements-to-remove}}” section.' +
+				'The meaning of this is not clear ' +
+				'(remove only qualifiers, or remove whole statement only if it has these qualifiers?), ' +
+				'so this is currenty not supported.',
+			// TODO implement the following error
+			'gadget-acdc-error-statement-to-add-and-remove':
+				'You specified statements with the same property and value ' +
+				'in the “{{int:gadget-acdc-field-statements-to-add}}” and ' +
+				'“{{int:gadget-acdc-field-statements-to-remove}}” sections. ' +
+				'The meaning of this is not clear, so it is currently not supported.',
 		},
 	} );
 	await $.i18n().load(
@@ -55,6 +71,12 @@
 		// so it has to be /wiki/….json?action=…, not /w/index.php?title=….json&action=…
 		// (and yes, this means the i18n only works on wikis with nice URLs)
 	);
+	// implement {{int:}}, see https://github.com/wikimedia/jquery.i18n/issues/211
+	$.extend( $.i18n.parser.emitter, {
+		int( nodes ) {
+			return $.i18n( ...nodes );
+		},
+	} );
 
 	/**
 	 * Maps titles to entity IDs.
@@ -159,6 +181,24 @@
 
 	sanityCheckStatementWidgetPropertyId();
 	sanityCheckStatementEquals();
+
+	let installedStyles = false;
+	function installStyles() {
+		if ( installedStyles ) {
+			return;
+		}
+		const style = document.createElement( 'style' );
+		// TODO better way to indicate errors
+		style.innerHTML = `
+.acdc-statementsDialog__statementWidget--duplicate-statement,
+.acdc-statementsDialog__statementWidget--statement-with-qualifiers-to-remove,
+.acdc-statementsDialog__statementWidget--statement-to-add-and-remove {
+	border-left: 2px solid red;
+}
+`;
+		document.head.appendChild( style );
+		installedStyles = true;
+	}
 
 	function ensureFileNamespace( title ) {
 		if ( title.startsWith( 'File:' ) ) {
@@ -431,7 +471,7 @@
 	/**
 	 * StatementsProgressBarWidget is a progress bar widget for AC/DC.
 	 * It is initialized with the number of files
-	 * and number of statements to add to each file,
+	 * and number of statements to edit on each file,
 	 * and updated whenever progress has been made,
 	 * and then calculates the progress itself each time.
 	 *
@@ -506,6 +546,9 @@
 	 * (i. e. to add qualifiers),
 	 * so trying to add more than one such statement does not make sense.
 	 *
+	 * Likewise, an error is reported if two statements in the “remove” section have the same value,
+	 * or if any of them have qualifiers, because the meaning of either would be unclear.
+	 *
 	 * @class
 	 * @extends OO.ui.ProcessDialog
 	 *
@@ -545,6 +588,7 @@
 	];
 	StatementsDialog.prototype.initialize = function () {
 		StatementsDialog.super.prototype.initialize.call( this );
+		installStyles();
 
 		this.stopped = false;
 
@@ -577,7 +621,7 @@
 				const itemWidgets = statementToAddWidget.getItems();
 
 				for ( const itemWidget of itemWidgets ) {
-					itemWidget.$element.css( 'border-left', 'none' );
+					itemWidget.$element.removeClass( 'acdc-statementsDialog__statementWidget--duplicate-statement' );
 				}
 
 				// this is O(n²) but for small n
@@ -587,8 +631,8 @@
 						const itemWidget2 = itemWidgets[ j ];
 						if ( itemWidget1.getData().getClaim().getMainSnak().equals( itemWidget2.getData().getClaim().getMainSnak() ) ) {
 							this.hasDuplicateStatementsToAddPerProperty[ id ] = true;
-							itemWidget1.$element.css( 'border-left', '2px solid red' ); // TODO better way to indicate errors
-							itemWidget2.$element.css( 'border-left', '2px solid red' );
+							itemWidget1.$element.addClass( 'acdc-statementsDialog__statementWidget--duplicate-statement' );
+							itemWidget2.$element.addClass( 'acdc-statementsDialog__statementWidget--duplicate-statement' );
 						}
 					}
 				}
@@ -603,6 +647,66 @@
 		addPropertyToAddWidget.connect( this, { choose: 'updateSize' } );
 		// TODO we should also updateSize when the AddPropertyWidget enters/leaves editing mode, but it doesn’t emit an event for that yet
 
+		this.hasDuplicateStatementsToRemovePerProperty = {};
+		this.hasStatementWithQualifiersToRemovePerProperty = {};
+		this.statementToRemoveWidgets = [];
+		const addPropertyToRemoveWidget = new AddPropertyWidget( {
+			$overlay: this.$overlay,
+		} );
+		addPropertyToRemoveWidget.on( 'choose', ( _widget, { id, datatype } ) => {
+			const statementToRemoveWidget = new StatementWidget( {
+				entityId: '', // this widget is reused for multiple entities, we inject the entity IDs on publish
+				propertyId: id,
+				isDefaultProperty: false,
+				propertyType: datatype,
+				$overlay: this.$overlay,
+				tags: this.tags,
+			} );
+			statementToRemoveWidget.connect( this, { change: 'updateCanSave' } );
+			statementToRemoveWidget.connect( this, { change: 'updateSize' } );
+			statementToRemoveWidget.on( 'change', () => {
+				// check if there are any duplicate statements or statements with qualifiers for this property
+				this.hasDuplicateStatementsToRemovePerProperty[ id ] = false;
+				this.hasStatementWithQualifiersToRemovePerProperty[ id ] = false;
+				const itemWidgets = statementToRemoveWidget.getItems();
+
+				for ( const itemWidget of itemWidgets ) {
+					itemWidget.$element.removeClass( 'acdc-statementsDialog__statementWidget--duplicate-statement' );
+					itemWidget.$element.removeClass( 'acdc-statementsDialog__statementWidget--statement-with-qualifiers-to-remove' );
+				}
+
+				// this is O(n²) but for small n
+				for ( let i = 0; i < itemWidgets.length; i++ ) {
+					const itemWidget1 = itemWidgets[ i ];
+					for ( let j = i + 1; j < itemWidgets.length; j++ ) {
+						const itemWidget2 = itemWidgets[ j ];
+						if ( itemWidget1.getData().getClaim().getMainSnak().equals( itemWidget2.getData().getClaim().getMainSnak() ) ) {
+							this.hasDuplicateStatementsToRemovePerProperty[ id ] = true;
+							itemWidget1.$element.addClass( 'acdc-statementsDialog__statementWidget--duplicate-statement' );
+							itemWidget2.$element.addClass( 'acdc-statementsDialog__statementWidget--duplicate-statement' );
+						}
+					}
+				}
+
+				for ( const itemWidget of itemWidgets ) {
+					// TODO we don’t check for references here (but WikibaseMediaInfo doesn’t support them yet as of writing this)
+					if ( !itemWidget.getData().getClaim().getQualifiers().isEmpty() ) {
+						this.hasStatementWithQualifiersToRemovePerProperty[ id ] = true;
+						itemWidget.$element.addClass( 'acdc-statementsDialog__statementWidget--statement-with-qualifiers-to-remove' );
+					}
+				}
+
+				this.updateShowDuplicateStatementsToRemoveError();
+				this.updateShowStatementWithQualifiersToRemoveError();
+				this.updateCanSave();
+			} );
+			this.statementToRemoveWidgets.push( statementToRemoveWidget );
+
+			statementToRemoveWidget.$element.insertBefore( addPropertyToRemoveWidget.$element );
+		} );
+		addPropertyToRemoveWidget.connect( this, { choose: 'updateSize' } );
+		// TODO we should also updateSize when the AddPropertyWidget enters/leaves editing mode, but it doesn’t emit an event for that yet
+
 		const filesField = new OO.ui.FieldLayout( this.filesWidget, {
 			label: $.i18n( 'gadget-acdc-field-files' ),
 			align: 'top',
@@ -615,10 +719,20 @@
 			classes: [ 'acdc-statementsDialog-statementsToAddField' ],
 		} );
 		statementsToAddField.$header.wrap( '<h3>' );
+		const statementsToRemoveField = new OO.ui.FieldLayout( addPropertyToRemoveWidget, {
+			label: $.i18n( 'gadget-acdc-field-statements-to-remove' ),
+			align: 'top',
+			classes: [ 'acdc-statementsDialog-statementsToRemoveField' ],
+		} );
+		statementsToRemoveField.$header.wrap( '<h3>' );
 
 		this.content = new OO.ui.PanelLayout( {
 			content: [ new OO.ui.FieldsetLayout( {
-				items: [
+				items: window.acdcEnableRemoveFeature ? [ // TODO remove this magic global
+					filesField,
+					statementsToAddField,
+					statementsToRemoveField,
+				] : [
 					filesField,
 					statementsToAddField,
 				],
@@ -637,6 +751,20 @@
 		} );
 		this.duplicateStatementsToAddError.toggle( false ); // see updateShowDuplicateStatementsToAddError
 		this.$foot.append( this.duplicateStatementsToAddError.$element );
+
+		this.duplicateStatementsToRemoveError = new OO.ui.MessageWidget( {
+			type: 'error',
+			label: $.i18n( 'gadget-acdc-error-duplicate-statements-to-remove' ),
+		} );
+		this.duplicateStatementsToRemoveError.toggle( false ); // see updateShowDuplicateStatementsToRemoveError
+		this.$foot.append( this.duplicateStatementsToRemoveError.$element );
+
+		this.statementWithQualifiersToRemoveError = new OO.ui.MessageWidget( {
+			type: 'error',
+			label: $.i18n( 'gadget-acdc-error-statement-with-qualifiers-to-remove' ),
+		} );
+		this.statementWithQualifiersToRemoveError.toggle( false ); // see updateShowStatementWithQualifiersToRemoveError
+		this.$foot.append( this.statementWithQualifiersToRemoveError.$element );
 	};
 	StatementsDialog.prototype.getSetupProcess = function ( data ) {
 		return StatementsDialog.super.prototype.getSetupProcess.call( this, data ).next( async () => {
@@ -697,11 +825,14 @@
 		const titles = this.filesWidget.getTitles();
 		this.statementsProgressBarWidget.enable(
 			titles.length,
-			this.statementToAddWidgets.reduce( ( acc, statementToAddWidget ) => acc + statementToAddWidget.getData().length, 0 ),
+			this.statementToAddWidgets.reduce( ( acc, statementToAddWidget ) => acc + statementToAddWidget.getData().length, 0 ) +
+				this.statementToRemoveWidgets.reduce( ( acc, statementToRemoveWidget ) => acc + statementToRemoveWidget.getData().length, 0 ),
 		);
 
 		await Promise.all( this.statementToAddWidgets.map(
 			statementToAddWidget => statementToAddWidget.setDisabled( true ).setEditing( false ) ) );
+		await Promise.all( this.statementToRemoveWidgets.map(
+			statementToRemoveWidget => statementToRemoveWidget.setDisabled( true ).setEditing( false ) ) );
 
 		const entityIds = await titlesToEntityIds( titles );
 		this.statementsProgressBarWidget.finishedLoadingEntityIds();
@@ -782,6 +913,49 @@
 				);
 			}
 
+			for ( const statementToRemoveWidget of this.statementToRemoveWidgets ) {
+				const previousStatements = statementListDeserializer.deserialize(
+					entityData[ entityId ].statements[ statementToRemoveWidget.state.propertyId ] || [] );
+				const statementIdsToRemove = statementToRemoveWidget.getData().toArray()
+					.flatMap( statementToRemove => {
+						const matchingStatementIds = previousStatements.toArray().flatMap( statement => {
+							if ( statement.getClaim().getMainSnak().equals( statementToRemove.getClaim().getMainSnak() ) ) {
+								return [ statement.getClaim().getGuid() ];
+							} else {
+								return [];
+							}
+						} );
+						if ( matchingStatementIds.length > 1 ) {
+							console.warn( `Deleting more than one matching statement on ${entityId}`, matchingStatementIds );
+						}
+						return matchingStatementIds;
+					} );
+
+				for ( const statementIdToRemove of statementIdsToRemove ) {
+					if ( this.stopped ) {
+						this.stopped = false;
+						return false;
+					}
+
+					// wbremoveclaims supports removing multiple statements at once, but we edit one at a time to get better edit summaries
+					await api.postWithEditToken( api.assertCurrentUser( {
+						action: 'wbremoveclaims',
+						claim: [ statementIdToRemove ],
+						baserevid: entityData[ entityId ].lastrevid,
+						bot: 1,
+						tags: this.tags,
+						format: 'json',
+						formatversion: '2',
+						errorformat: 'plaintext',
+					} ) ).catch( ( ...args ) => { throw args; } ); // jQuery can reject with multiple errors, native promises can’t
+					// TODO handle API errors better
+				}
+
+				this.statementsProgressBarWidget.finishedStatements(
+					statementToRemoveWidget.getData().length, // for the progress, we also count statements that didn’t change
+				);
+			}
+
 			this.filesWidget.removeTagByData( title );
 			this.statementsProgressBarWidget.finishedEntity();
 		}
@@ -795,16 +969,34 @@
 	StatementsDialog.prototype.hasDuplicateStatementsToAdd = function () {
 		return Object.values( this.hasDuplicateStatementsToAddPerProperty ).some( b => b );
 	};
+	StatementsDialog.prototype.hasDuplicateStatementsToRemove = function () {
+		return Object.values( this.hasDuplicateStatementsToRemovePerProperty ).some( b => b );
+	};
+	StatementsDialog.prototype.hasStatementWithQualifiersToRemove = function () {
+		return Object.values( this.hasStatementWithQualifiersToRemovePerProperty ).some( b => b );
+	};
 	StatementsDialog.prototype.updateCanSave = function () {
 		this.actions.setAbilities( {
 			save: this.filesWidget.getTitles().length &&
-				this.statementToAddWidgets.some(
-					statementToAddWidget => statementToAddWidget.getData().length ) &&
-				!this.hasDuplicateStatementsToAdd(),
+				(
+					this.statementToAddWidgets.some(
+						statementToAddWidget => statementToAddWidget.getData().length ) ||
+					this.statementToRemoveWidgets.some(
+						statementToRemoveWidget => statementToRemoveWidget.getData().length )
+				) &&
+				!this.hasDuplicateStatementsToAdd() &&
+				!this.hasDuplicateStatementsToRemove() &&
+				!this.hasStatementWithQualifiersToRemove(),
 		} );
 	};
 	StatementsDialog.prototype.updateShowDuplicateStatementsToAddError = function () {
 		this.duplicateStatementsToAddError.toggle( this.hasDuplicateStatementsToAdd() );
+	};
+	StatementsDialog.prototype.updateShowDuplicateStatementsToRemoveError = function () {
+		this.duplicateStatementsToRemoveError.toggle( this.hasDuplicateStatementsToRemove() );
+	};
+	StatementsDialog.prototype.updateShowStatementWithQualifiersToRemoveError = function () {
+		this.statementWithQualifiersToRemoveError.toggle( this.hasStatementWithQualifiersToRemove() );
 	};
 	StatementsDialog.prototype.getBodyHeight = function () {
 		// we ceil the body height to the next multiple of 200 so it doesn’t change too often
