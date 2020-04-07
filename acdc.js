@@ -51,7 +51,7 @@
 				'which is not supported.',
 			'gadget-acdc-error-statement-with-qualifiers-to-remove':
 				'You specified a statement with qualifiers ' +
-				'in the “{{int:gadget-acdc-field-statements-to-remove}}” section.' +
+				'in the “{{int:gadget-acdc-field-statements-to-remove}}” section. ' +
 				'The meaning of this is not clear ' +
 				'(remove only qualifiers, or remove whole statement only if it has these qualifiers?), ' +
 				'so this is currenty not supported.',
