@@ -89,7 +89,11 @@
 			entityIds = {};
 		let someTitles;
 		while ( ( someTitles = allTitles.splice( 0, 50 ) ).length > 0 ) {
-			const response = await api.get( { action: 'query', titles: someTitles, formatversion: 2 } );
+			const response = await api.post( { // POST because titles list may be too long for GET URL
+				action: 'query',
+				titles: someTitles,
+				formatversion: 2,
+			} );
 			for ( const page of response.query.pages ) {
 				entityIds[ page.title ] = `M${page.pageid}`;
 			}
