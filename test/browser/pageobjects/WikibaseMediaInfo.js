@@ -1,7 +1,7 @@
 class WikibaseMediaInfo {
 
 	get entitySelectorEntry() {
-		return $( '.oo-ui-menuOptionWidget' );
+		return $( '.oo-ui-lookupElement-menu .oo-ui-menuOptionWidget' );
 	}
 
 }
