@@ -1,6 +1,5 @@
 language: node_js
-# node_js: node # means “latest” in nvm
-node_js: 13 # giggio/node-chromedriver#265
+node_js: node # means “latest” in nvm
 script:
   - make check
   - make all
