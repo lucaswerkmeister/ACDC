@@ -1,4 +1,5 @@
 const webpack = require( 'webpack' );
+const StatsPlugin = require( 'stats-webpack-plugin' );
 
 module.exports = {
 	entry: './acdc.js',
@@ -56,5 +57,7 @@ please do not edit this page directly –
 and where you can find out more about the licenses
 of some of the code (polyfills) included in this page.
 ` ),
+		new StatsPlugin( 'stats.json' ),
 	],
+	profile: true,
 };
