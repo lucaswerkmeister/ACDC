@@ -29,6 +29,8 @@ module.exports = {
 									corejs: 3,
 									exclude: [
 										'es.promise', // polyfilled via es6-promise ResourceLoader module instead
+										'es.array.index-of', // not actually used, false positive from prefix.indexOf( '|' ) where prefix is a String, not an Array
+										'es.string.search', // not actually used, false positive from response.query.search where response is API response JSON
 									],
 								},
 							],
