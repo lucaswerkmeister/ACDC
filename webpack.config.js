@@ -26,6 +26,9 @@ module.exports = {
 									],
 									useBuiltIns: 'usage',
 									corejs: 3,
+									exclude: [
+										'es.promise', // polyfilled via es6-promise ResourceLoader module instead
+									],
 								},
 							],
 						],
