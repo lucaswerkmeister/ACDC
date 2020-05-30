@@ -3,7 +3,8 @@ const assert = require( 'assert' ),
 	process = require( 'process' ),
 	MWBot = require( 'mwbot' ),
 	wdioConf = require( '../../../wdio.conf' ),
-	ACDC = require( '../pageobjects/ACDC' );
+	ACDC = require( '../pageobjects/ACDC' ),
+	MediaWiki = require( '../pageobjects/MediaWiki' );
 
 const bot = new MWBot( { apiUrl: `${wdioConf.config.baseUrl}/w/api.php` } );
 
@@ -26,6 +27,7 @@ describe( 'AC/DC', () => {
 		beforeEach( 'open blank page and inject AC/DC code', async () => {
 			await browser.url( '/wiki/Special:BlankPage?uselang=en' );
 			await injectAcdc();
+			await MediaWiki.ensureSidebarShown();
 		} );
 
 		it( 'defines the portlet link', async () => {
