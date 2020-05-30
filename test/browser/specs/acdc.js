@@ -104,8 +104,8 @@ describe( 'AC/DC', () => {
 			'File:ACDC test file 1.pdf': -1,
 			'File:ACDC test file 2.pdf': -1,
 		};
-		const wikibaseItemPropertyId1 = 'P694';
-		const wikibaseItemPropertyId2 = 'P707';
+		const wikibaseItemPropertyId1 = 'P734';
+		const wikibaseItemPropertyId2 = 'P116'; // NOTE: not an Item property on Wikidata
 		const itemId1 = 'Q15';
 		const itemId2 = 'Q21';
 
