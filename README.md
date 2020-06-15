@@ -1,4 +1,4 @@
-# AC/DC [![Build Status](https://travis-ci.com/lucaswerkmeister/ACDC.svg?branch=master)](https://travis-ci.com/lucaswerkmeister/ACDC)
+# AC/DC [![Build Status](https://travis-ci.com/lucaswerkmeister/ACDC.svg?branch=main)](https://travis-ci.com/lucaswerkmeister/ACDC)
 
 **Add to Commons / Descriptive Claims** is a gadget for Wikimedia Commons
 to add a collection of statements to a set of files.
@@ -17,7 +17,7 @@ For deployment, run `make all` to build the Commons version of the script,
 copy `dist/main.js` to the clipboard and save that on [`MediaWiki:Gadget-ACDC.js`](https://commons.wikimedia.org/wiki/MediaWiki:Gadget-ACDC.js).
 Afterwards, copy the page revision from the “permanent link” in the sidebar
 and tag the current commit as <code>r<var>revid</var></code>,
-then push `master` and that tag to `origin`.
+then push `main` and that tag to `origin`.
 
 When introducing new dependencies in `package.json`,
 add them to `dependencies` if they’re necessary to build the gadget (`make all`),
