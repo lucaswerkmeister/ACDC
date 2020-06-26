@@ -530,7 +530,7 @@
 	};
 	FilesWidget.prototype.loadPagePile = async function ( pagePileId ) {
 		const pileJson = await fetch(
-			`https://tools.wmflabs.org/pagepile/api.php?action=get_data&id=${pagePileId}&format=json`,
+			`https://pagepile.toolforge.org/api.php?action=get_data&id=${pagePileId}&format=json`,
 		).then( r => r.json() );
 		if ( pileJson.wiki !== mw.config.get( 'wgDBname' ) ) {
 			await OO.ui.alert( $.i18n( 'gadget-acdc-load-pagepile-error-wrong-wiki' ) );
