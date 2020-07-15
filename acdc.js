@@ -191,6 +191,7 @@
 		if ( installedStyles ) {
 			return;
 		}
+
 		const style = document.createElement( 'style' );
 		// TODO better way to indicate errors
 		style.innerHTML = `
@@ -200,6 +201,15 @@
 	border-left: 2px solid red;
 }
 `;
+		const now = new Date();
+		if ( ( now.getMonth() + 1 ) === 9 && now.getDate() === 23 ) {
+			style.innerHTML += `
+.acdc-statementsDialog .oo-ui-processDialog-actions-primary .oo-ui-widget-enabled .oo-ui-buttonElement-button {
+	background: linear-gradient( #D60270 40%, #9B4F96 40%, 60%, #0038A8 60% );
+}
+`;
+		}
+
 		document.head.appendChild( style );
 		installedStyles = true;
 	}
