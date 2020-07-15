@@ -24,8 +24,8 @@ describe( 'AC/DC', () => {
 	}
 
 	describe( 'default mode', () => {
-		beforeEach( 'open a page and inject AC/DC code', async () => {
-			await browser.url( '/wiki/Special:Version?uselang=en' );
+		beforeEach( 'open blank page and inject AC/DC code', async () => {
+			await browser.url( '/wiki/Special:BlankPage?uselang=en' );
 			await injectAcdc();
 			await MediaWiki.ensureSidebarShown();
 		} );
