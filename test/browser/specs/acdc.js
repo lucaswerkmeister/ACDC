@@ -20,6 +20,9 @@ describe( 'AC/DC', () => {
 			() => window.mediaWiki !== undefined &&
 				window.jQuery !== undefined &&
 				window.mediaWiki.loader.using !== undefined ) );
+		await browser.execute( () => {
+			window.acdcFavoriteProperties = [];
+		} );
 		await browser.execute( acdc );
 	}
 

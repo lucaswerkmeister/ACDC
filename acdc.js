@@ -144,6 +144,27 @@
 	}
 
 	/**
+	 * Return the datatypes of the properties with the given IDs.
+	 * @param {Array.<string>} propertyIds
+	 * @return {Promise<Object.<string,string>>}
+	 */
+	async function propertyDatatypes( propertyIds ) {
+		if ( !propertyIds.length ) {
+			return {};
+		}
+		const api = new mw.Api(),
+			response = await api.get( {
+				action: 'wbgetentities',
+				ids: propertyIds,
+				props: [ 'datatype' ],
+				formatversion: 2,
+			} );
+		return Object.fromEntries(
+			Object.entries( response.entities )
+				.map( ( [ propertyId, { datatype } ] ) => [ propertyId, datatype ] ) );
+	}
+
+	/**
 	 * Sleep for a tiny bit, to give the browser time to update the UI.
 	 * Usually called in busy loops that would otherwise block for a while, freezing the browser.
 	 * Calling this may slow down the process a bit, but is much more responsive.
@@ -615,110 +636,21 @@
 
 		this.hasDuplicateStatementsToAddPerProperty = {};
 		this.statementToAddWidgets = [];
-		const addPropertyToAddWidget = new AddPropertyWidget( {
+		this.addPropertyToAddWidget = new AddPropertyWidget( {
 			$overlay: this.$overlay,
 		} );
-		addPropertyToAddWidget.on( 'choose', ( _widget, { id, datatype } ) => {
-			const statementToAddWidget = new StatementWidget( {
-				entityId: '', // this widget is reused for multiple entities, we inject the entity IDs on publish
-				propertyId: id,
-				isDefaultProperty: false,
-				propertyType: datatype,
-				$overlay: this.$overlay,
-				tags: this.tags,
-			} );
-			statementToAddWidget.connect( this, { change: 'updateCanSave' } );
-			statementToAddWidget.connect( this, { change: 'updateSize' } );
-			statementToAddWidget.on( 'change', () => {
-				// check if there are any duplicate statements for this property
-				this.hasDuplicateStatementsToAddPerProperty[ id ] = false;
-				const itemWidgets = statementToAddWidget.getItems();
-
-				for ( const itemWidget of itemWidgets ) {
-					itemWidget.$element.removeClass( 'acdc-statementsDialog__statementWidget--duplicate-statement' );
-				}
-
-				// this is O(n²) but for small n
-				for ( let i = 0; i < itemWidgets.length; i++ ) {
-					const itemWidget1 = itemWidgets[ i ];
-					for ( let j = i + 1; j < itemWidgets.length; j++ ) {
-						const itemWidget2 = itemWidgets[ j ];
-						if ( itemWidget1.getData().getClaim().getMainSnak().equals( itemWidget2.getData().getClaim().getMainSnak() ) ) {
-							this.hasDuplicateStatementsToAddPerProperty[ id ] = true;
-							itemWidget1.$element.addClass( 'acdc-statementsDialog__statementWidget--duplicate-statement' );
-							itemWidget2.$element.addClass( 'acdc-statementsDialog__statementWidget--duplicate-statement' );
-						}
-					}
-				}
-
-				this.updateShowDuplicateStatementsToAddError();
-				this.updateCanSave();
-			} );
-			this.statementToAddWidgets.push( statementToAddWidget );
-
-			statementToAddWidget.$element.insertBefore( addPropertyToAddWidget.$element );
-		} );
-		addPropertyToAddWidget.connect( this, { choose: 'updateSize' } );
+		this.addPropertyToAddWidget.on( 'choose', ( _widget, { id, datatype } ) => this.addStatementToAddWidget( id, datatype ) );
+		this.addPropertyToAddWidget.connect( this, { choose: 'updateSize' } );
 		// TODO we should also updateSize when the AddPropertyWidget enters/leaves editing mode, but it doesn’t emit an event for that yet
 
 		this.hasDuplicateStatementsToRemovePerProperty = {};
 		this.hasStatementWithQualifiersToRemovePerProperty = {};
 		this.statementToRemoveWidgets = [];
-		const addPropertyToRemoveWidget = new AddPropertyWidget( {
+		this.addPropertyToRemoveWidget = new AddPropertyWidget( {
 			$overlay: this.$overlay,
 		} );
-		addPropertyToRemoveWidget.on( 'choose', ( _widget, { id, datatype } ) => {
-			const statementToRemoveWidget = new StatementWidget( {
-				entityId: '', // this widget is reused for multiple entities, we inject the entity IDs on publish
-				propertyId: id,
-				isDefaultProperty: false,
-				propertyType: datatype,
-				$overlay: this.$overlay,
-				tags: this.tags,
-			} );
-			statementToRemoveWidget.connect( this, { change: 'updateCanSave' } );
-			statementToRemoveWidget.connect( this, { change: 'updateSize' } );
-			statementToRemoveWidget.on( 'change', () => {
-				// check if there are any duplicate statements or statements with qualifiers for this property
-				this.hasDuplicateStatementsToRemovePerProperty[ id ] = false;
-				this.hasStatementWithQualifiersToRemovePerProperty[ id ] = false;
-				const itemWidgets = statementToRemoveWidget.getItems();
-
-				for ( const itemWidget of itemWidgets ) {
-					itemWidget.$element.removeClass( 'acdc-statementsDialog__statementWidget--duplicate-statement' );
-					itemWidget.$element.removeClass( 'acdc-statementsDialog__statementWidget--statement-with-qualifiers-to-remove' );
-				}
-
-				// this is O(n²) but for small n
-				for ( let i = 0; i < itemWidgets.length; i++ ) {
-					const itemWidget1 = itemWidgets[ i ];
-					for ( let j = i + 1; j < itemWidgets.length; j++ ) {
-						const itemWidget2 = itemWidgets[ j ];
-						if ( itemWidget1.getData().getClaim().getMainSnak().equals( itemWidget2.getData().getClaim().getMainSnak() ) ) {
-							this.hasDuplicateStatementsToRemovePerProperty[ id ] = true;
-							itemWidget1.$element.addClass( 'acdc-statementsDialog__statementWidget--duplicate-statement' );
-							itemWidget2.$element.addClass( 'acdc-statementsDialog__statementWidget--duplicate-statement' );
-						}
-					}
-				}
-
-				for ( const itemWidget of itemWidgets ) {
-					// TODO we don’t check for references here (but WikibaseMediaInfo doesn’t support them yet as of writing this)
-					if ( !itemWidget.getData().getClaim().getQualifiers().isEmpty() ) {
-						this.hasStatementWithQualifiersToRemovePerProperty[ id ] = true;
-						itemWidget.$element.addClass( 'acdc-statementsDialog__statementWidget--statement-with-qualifiers-to-remove' );
-					}
-				}
-
-				this.updateShowDuplicateStatementsToRemoveError();
-				this.updateShowStatementWithQualifiersToRemoveError();
-				this.updateCanSave();
-			} );
-			this.statementToRemoveWidgets.push( statementToRemoveWidget );
-
-			statementToRemoveWidget.$element.insertBefore( addPropertyToRemoveWidget.$element );
-		} );
-		addPropertyToRemoveWidget.connect( this, { choose: 'updateSize' } );
+		this.addPropertyToRemoveWidget.on( 'choose', ( _widget, { id, datatype } ) => this.addStatementToRemoveWidget( id, datatype ) );
+		this.addPropertyToRemoveWidget.connect( this, { choose: 'updateSize' } );
 		// TODO we should also updateSize when the AddPropertyWidget enters/leaves editing mode, but it doesn’t emit an event for that yet
 
 		const filesField = new OO.ui.FieldLayout( this.filesWidget, {
@@ -727,13 +659,13 @@
 			classes: [ 'acdc-statementsDialog-filesField' ],
 		} );
 		filesField.$header.wrap( '<h3>' );
-		const statementsToAddField = new OO.ui.FieldLayout( addPropertyToAddWidget, {
+		const statementsToAddField = new OO.ui.FieldLayout( this.addPropertyToAddWidget, {
 			label: $.i18n( 'gadget-acdc-field-statements-to-add' ),
 			align: 'top',
 			classes: [ 'acdc-statementsDialog-statementsToAddField' ],
 		} );
 		statementsToAddField.$header.wrap( '<h3>' );
-		const statementsToRemoveField = new OO.ui.FieldLayout( addPropertyToRemoveWidget, {
+		const statementsToRemoveField = new OO.ui.FieldLayout( this.addPropertyToRemoveWidget, {
 			label: $.i18n( 'gadget-acdc-field-statements-to-remove' ),
 			align: 'top',
 			classes: [ 'acdc-statementsDialog-statementsToRemoveField' ],
@@ -779,6 +711,21 @@
 		} );
 		this.statementWithQualifiersToRemoveError.toggle( false ); // see updateShowStatementWithQualifiersToRemoveError
 		this.$foot.append( this.statementWithQualifiersToRemoveError.$element );
+
+		const favoritePropertiesToAdd = window.acdcFavoritePropertiesToAdd ||
+			window.acdcFavoriteProperties ||
+			mw.config.get( 'wbmiDefaultProperties', [] );
+		const favoritePropertiesToRemove = window.acdcFavoritePropertiesToRemove ||
+			window.acdcFavoriteProperties ||
+			[];
+		propertyDatatypes( Array.from( new Set( [ ...favoritePropertiesToAdd, ...favoritePropertiesToRemove ] ) ) ).then( datatypes => {
+			for ( const favoritePropertyToAdd of favoritePropertiesToAdd ) {
+				this.addStatementToAddWidget( favoritePropertyToAdd, datatypes[ favoritePropertyToAdd ] );
+			}
+			for ( const favoritePropertyToRemove of favoritePropertiesToRemove ) {
+				this.addStatementToRemoveWidget( favoritePropertyToRemove, datatypes[ favoritePropertyToRemove ] );
+			}
+		} );
 	};
 	StatementsDialog.prototype.getSetupProcess = function ( data ) {
 		return StatementsDialog.super.prototype.getSetupProcess.call( this, data ).next( async () => {
@@ -822,6 +769,97 @@
 			default:
 				return StatementsDialog.super.prototype.getActionProcess.call( this, action );
 		}
+	};
+	StatementsDialog.prototype.addStatementToAddWidget = function ( id, datatype ) {
+		const statementToAddWidget = new StatementWidget( {
+			entityId: '', // this widget is reused for multiple entities, we inject the entity IDs on publish
+			propertyId: id,
+			isDefaultProperty: false,
+			propertyType: datatype,
+			$overlay: this.$overlay,
+			tags: this.tags,
+		} );
+		statementToAddWidget.connect( this, { change: 'updateCanSave' } );
+		statementToAddWidget.connect( this, { change: 'updateSize' } );
+		statementToAddWidget.on( 'change', () => {
+			// check if there are any duplicate statements for this property
+			this.hasDuplicateStatementsToAddPerProperty[ id ] = false;
+			const itemWidgets = statementToAddWidget.getItems();
+
+			for ( const itemWidget of itemWidgets ) {
+				itemWidget.$element.removeClass( 'acdc-statementsDialog__statementWidget--duplicate-statement' );
+			}
+
+			// this is O(n²) but for small n
+			for ( let i = 0; i < itemWidgets.length; i++ ) {
+				const itemWidget1 = itemWidgets[ i ];
+				for ( let j = i + 1; j < itemWidgets.length; j++ ) {
+					const itemWidget2 = itemWidgets[ j ];
+					if ( itemWidget1.getData().getClaim().getMainSnak().equals( itemWidget2.getData().getClaim().getMainSnak() ) ) {
+						this.hasDuplicateStatementsToAddPerProperty[ id ] = true;
+						itemWidget1.$element.addClass( 'acdc-statementsDialog__statementWidget--duplicate-statement' );
+						itemWidget2.$element.addClass( 'acdc-statementsDialog__statementWidget--duplicate-statement' );
+					}
+				}
+			}
+
+			this.updateShowDuplicateStatementsToAddError();
+			this.updateCanSave();
+		} );
+		this.statementToAddWidgets.push( statementToAddWidget );
+
+		statementToAddWidget.$element.insertBefore( this.addPropertyToAddWidget.$element );
+	};
+	StatementsDialog.prototype.addStatementToRemoveWidget = function ( id, datatype ) {
+		const statementToRemoveWidget = new StatementWidget( {
+			entityId: '', // this widget is reused for multiple entities, we inject the entity IDs on publish
+			propertyId: id,
+			isDefaultProperty: false,
+			propertyType: datatype,
+			$overlay: this.$overlay,
+			tags: this.tags,
+		} );
+		statementToRemoveWidget.connect( this, { change: 'updateCanSave' } );
+		statementToRemoveWidget.connect( this, { change: 'updateSize' } );
+		statementToRemoveWidget.on( 'change', () => {
+			// check if there are any duplicate statements or statements with qualifiers for this property
+			this.hasDuplicateStatementsToRemovePerProperty[ id ] = false;
+			this.hasStatementWithQualifiersToRemovePerProperty[ id ] = false;
+			const itemWidgets = statementToRemoveWidget.getItems();
+
+			for ( const itemWidget of itemWidgets ) {
+				itemWidget.$element.removeClass( 'acdc-statementsDialog__statementWidget--duplicate-statement' );
+				itemWidget.$element.removeClass( 'acdc-statementsDialog__statementWidget--statement-with-qualifiers-to-remove' );
+			}
+
+			// this is O(n²) but for small n
+			for ( let i = 0; i < itemWidgets.length; i++ ) {
+				const itemWidget1 = itemWidgets[ i ];
+				for ( let j = i + 1; j < itemWidgets.length; j++ ) {
+					const itemWidget2 = itemWidgets[ j ];
+					if ( itemWidget1.getData().getClaim().getMainSnak().equals( itemWidget2.getData().getClaim().getMainSnak() ) ) {
+						this.hasDuplicateStatementsToRemovePerProperty[ id ] = true;
+						itemWidget1.$element.addClass( 'acdc-statementsDialog__statementWidget--duplicate-statement' );
+						itemWidget2.$element.addClass( 'acdc-statementsDialog__statementWidget--duplicate-statement' );
+					}
+				}
+			}
+
+			for ( const itemWidget of itemWidgets ) {
+				// TODO we don’t check for references here (but WikibaseMediaInfo doesn’t support them yet as of writing this)
+				if ( !itemWidget.getData().getClaim().getQualifiers().isEmpty() ) {
+					this.hasStatementWithQualifiersToRemovePerProperty[ id ] = true;
+					itemWidget.$element.addClass( 'acdc-statementsDialog__statementWidget--statement-with-qualifiers-to-remove' );
+				}
+			}
+
+			this.updateShowDuplicateStatementsToRemoveError();
+			this.updateShowStatementWithQualifiersToRemoveError();
+			this.updateCanSave();
+		} );
+		this.statementToRemoveWidgets.push( statementToRemoveWidget );
+
+		statementToRemoveWidget.$element.insertBefore( this.addPropertyToRemoveWidget.$element );
 	};
 	StatementsDialog.prototype.onActionClick = function ( action ) {
 		if ( !this.isPending() || action.getAction() === 'stop' ) {
