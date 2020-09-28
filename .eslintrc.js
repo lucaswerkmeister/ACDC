@@ -19,5 +19,6 @@ module.exports = {
 		'arrow-parens': [ 'error', 'as-needed' ],
 		'comma-dangle': [ 'error', 'always-multiline' ],
 		'no-irregular-whitespace': [ 'error', { skipStrings: true, skipComments: true } ],
+		'no-promise-executor-return': 'off', // eslint/eslint#13668
 	},
 };

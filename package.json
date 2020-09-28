@@ -19,7 +19,7 @@
     "@wdio/spec-reporter": "^5.23.0",
     "chromedriver": "^85.0.1",
     "eslint": "^7.10.0",
-    "eslint-config-wikimedia": "^0.16.2",
+    "eslint-config-wikimedia": "^0.17.0",
     "eslint-plugin-webdriverio": "^1.0.1",
     "mwbot": "^1.0.10",
     "stats-webpack-plugin": "^0.7.0",
