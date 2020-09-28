@@ -80,6 +80,7 @@
 
 	/**
 	 * Maps titles to entity IDs.
+	 *
 	 * @param {string[]} titles
 	 * @return {Promise<Object.<string,string>>} map from title to entity ID
 	 */
@@ -103,6 +104,7 @@
 
 	/**
 	 * Maps entity IDs to entity data.
+	 *
 	 * @param {string[]} entityIds
 	 * @param {string[]} props
 	 * @return {Promise<Object.<string,Object>>} map from entity ID to entity data
@@ -145,6 +147,7 @@
 
 	/**
 	 * Return the datatypes of the properties with the given IDs.
+	 *
 	 * @param {Array.<string>} propertyIds
 	 * @return {Promise<Object.<string,string>>}
 	 */
@@ -168,6 +171,7 @@
 	 * Sleep for a tiny bit, to give the browser time to update the UI.
 	 * Usually called in busy loops that would otherwise block for a while, freezing the browser.
 	 * Calling this may slow down the process a bit, but is much more responsive.
+	 *
 	 * @return {Promise}
 	 */
 	function microsleep() {
@@ -871,6 +875,7 @@
 	};
 	/**
 	 * Saves changes to the statements.
+	 *
 	 * @return {Promise<boolean>} Whether the save finished completely (true) or was stopped prematurely (false).
 	 */
 	StatementsDialog.prototype.save = async function () {
