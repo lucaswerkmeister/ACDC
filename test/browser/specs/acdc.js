@@ -35,14 +35,14 @@ describe( 'AC/DC', () => {
 
 		it( 'defines the portlet link', async () => {
 			const portletLink = await ACDC.portletLink;
-			assert.strictEqual( await portletLink.getText(), 'AC/DC' );
+			await expect( portletLink ).toHaveText( 'AC/DC' );
 		} );
 
 		it( 'opens the dialog when clicking the portlet link', async () => {
 			const portletLink = await ACDC.portletLink;
 			await portletLink.click();
 			const dialog = await ACDC.dialog;
-			await dialog.waitForDisplayed();
+			await expect( dialog ).toBeDisplayed();
 		} );
 	} );
 
@@ -61,7 +61,7 @@ describe( 'AC/DC', () => {
 
 		it( 'opens the dialog', async () => {
 			const dialog = await ACDC.dialog;
-			await dialog.waitForDisplayed();
+			await expect( dialog ).toBeDisplayed();
 		} );
 	} );
 
@@ -69,7 +69,7 @@ describe( 'AC/DC', () => {
 		beforeEach( 'open blank page and inject AC/DC code', async () => {
 			await browser.url( '/wiki/Special:BlankPage?uselang=en&acdcShow=1' );
 			await injectAcdc();
-			await ( await ACDC.dialog ).waitForDisplayed();
+			await expect( await ACDC.dialog ).toBeDisplayed();
 		} );
 
 		it( 'supports entering the full file name', async () => {
