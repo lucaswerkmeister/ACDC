@@ -6,6 +6,7 @@ module.exports = {
 	},
 	extends: [
 		'wikimedia',
+		'wikimedia/jsduck',
 		'wikimedia/jquery',
 		'wikimedia/language/es2019',
 	],
