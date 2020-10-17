@@ -136,22 +136,30 @@ describe( 'AC/DC', () => {
 			} );
 			await injectAcdc();
 
-			await browser.executeAsync( async ( username, password, done ) => {
+			const error = await browser.executeAsync( async ( username, password, done ) => {
 				const api = new mediaWiki.Api();
 				const token = ( await api.get( {
 					action: 'query',
 					meta: 'tokens',
 					type: 'login',
 				} ) ).query.tokens.logintoken;
-				username = ( await api.post( {
+				const response = await api.post( {
 					action: 'login',
 					lgname: username,
 					lgpassword: password,
 					lgtoken: token,
-				} ) ).login.lgusername; // might differ from original username in case of bot password
-				mediaWiki.config.set( 'wgUserName', username );
-				done();
+				} );
+				username = response.login.lgusername; // might differ from original username in case of bot password
+				if ( username !== undefined ) {
+					mediaWiki.config.set( 'wgUserName', username );
+					done( null );
+				} else {
+					done( 'Login failed: ' + response.login.reason );
+				}
 			}, username, password );
+			if ( error ) {
+				throw new Error( error );
+			}
 		} );
 
 		it( 'can add a single statement', async () => {
