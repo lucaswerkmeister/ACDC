@@ -140,7 +140,7 @@ describe( 'AC/DC', () => {
 				const api = new mediaWiki.Api();
 				let response = await api.get( {
 					action: 'query',
-					meta: ['tokens', 'userinfo'],
+					meta: [ 'tokens', 'userinfo' ],
 					type: 'login',
 				} );
 				if ( response.query.userinfo.name === username ) {
@@ -163,7 +163,7 @@ describe( 'AC/DC', () => {
 					let reason = `Expected to log in as ${username} but returned ${response.login.lgusername}.`;
 					reason += '\nIf using a bot password, please use the form username / appid@password';
 					reason += ' rather than username@appid / password.';
-					if (response.login.reason ) {
+					if ( response.login.reason ) {
 						reason += '\n' + reason;
 					}
 					done( reason );
