@@ -138,23 +138,38 @@ describe( 'AC/DC', () => {
 
 			const error = await browser.executeAsync( async ( username, password, done ) => {
 				const api = new mediaWiki.Api();
-				const token = ( await api.get( {
+				let response = await api.get( {
 					action: 'query',
-					meta: 'tokens',
+					meta: ['tokens', 'userinfo'],
 					type: 'login',
-				} ) ).query.tokens.logintoken;
-				const response = await api.post( {
+				} );
+				if ( response.query.userinfo.name === username ) {
+					// already logged in
+					mediaWiki.config.set( 'wgUserName', username );
+					done( null );
+					return;
+				}
+				const token = response.query.tokens.logintoken;
+				response = await api.post( {
 					action: 'login',
 					lgname: username,
 					lgpassword: password,
 					lgtoken: token,
 				} );
-				username = response.login.lgusername; // might differ from original username in case of bot password
-				if ( username !== undefined ) {
+				if ( response.login.lgusername !== username ) {
+					// If lgusername !== username, we may be logged in now,
+					// but we won’t be able to detect “already logged in” above
+					// for the next test run, so better to fail here.
+					let reason = `Expected to log in as ${username} but returned ${response.login.lgusername}.`;
+					reason += '\nIf using a bot password, please use the form username / appid@password';
+					reason += ' rather than username@appid / password.';
+					if (response.login.reason ) {
+						reason += '\n' + reason;
+					}
+					done( reason );
+				} else {
 					mediaWiki.config.set( 'wgUserName', username );
 					done( null );
-				} else {
-					done( 'Login failed: ' + response.login.reason );
 				}
 			}, username, password );
 			if ( error ) {
