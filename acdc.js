@@ -239,12 +239,61 @@
 		installedStyles = true;
 	}
 
+	/**
+	 * Ensure that a title begins with the File: namespace.
+	 *
+	 * @param {string} title
+	 * @return {string}
+	 */
 	function ensureFileNamespace( title ) {
 		if ( title.startsWith( 'File:' ) ) {
 			return title;
 		} else {
 			return `File:${title}`;
 		}
+	}
+
+	/**
+	 * Try to intelligently parse some input for a file.
+	 * The input can be a title with or without the File: namespace,
+	 * or a URL to the file on the local wiki.
+	 *
+	 * @param {string} input
+	 * @return {string}
+	 */
+	function parseFileInput( input ) {
+		if ( input.indexOf( '/' ) !== -1 ) {
+			// file names can never contain a slash, so try to parse as URL
+			// (subpages in the File: namespace exist but they’re not files)
+			try {
+				const url = new URL( input );
+
+				const articlePath = mw.config.get( 'wgArticlePath' ); // like /wiki/$1
+				if ( articlePath.endsWith( '$1' ) && articlePath.indexOf( '?' ) === -1 ) {
+					const articlePathPrefix = articlePath.slice( 0, -2 );
+					if ( `${url.protocol}//${url.host}` === mw.config.get( 'wgServer' ) &&
+						url.pathname.startsWith( `${articlePathPrefix}File:` ) ) {
+						return decodeURIComponent(
+							url.pathname.substring( articlePathPrefix.length ),
+						).replace( /_/g, ' ' );
+					}
+				}
+
+				const script = mw.config.get( 'wgScript' ); // like /w/index.php
+				if ( url.pathname === script ) {
+					const params = url.searchParams;
+					if ( params.has( 'title' ) ) {
+						return decodeURIComponent(
+							params.get( 'title' ),
+						).replace( /_/g, ' ' );
+					}
+				}
+			} catch ( e ) {
+				// ignore, wasn’t a URL after all
+			}
+		}
+
+		return ensureFileNamespace( input );
 	}
 
 	/**
@@ -454,7 +503,7 @@
 		const titles = this.input.getValue().split( '|' )
 			.map( s => s.trim() )
 			.filter( s => s )
-			.map( title => ensureFileNamespace( title ) );
+			.map( input => parseFileInput( input ) );
 		this.clearInput();
 
 		for ( const title of titles ) {

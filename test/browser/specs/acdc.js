@@ -84,6 +84,37 @@ describe( 'AC/DC', () => {
 			assert.strictEqual( await ACDC.tagItemText( 1 ), 'File:ACDC test file 1.pdf' );
 		} );
 
+		it( 'parses short URL', async () => { // “short” as in [[mw:Manual:Short URL]]
+			const url = await browser.executeAsync( async done => {
+				const relativeUrl = ( new mediaWiki.Title( 'File:ACDC test file 1.pdf' ) ).getUrl();
+				done( mediaWiki.config.get( 'wgServer' ) + relativeUrl );
+			} );
+			await ACDC.setFileInputValue( url );
+			await browser.keys( [ 'Enter' ] );
+			assert.strictEqual( await ACDC.tagItemText( 1 ), 'File:ACDC test file 1.pdf' );
+		} );
+
+		it( 'parses default URL', async () => {
+			const url = await browser.executeAsync( async done => {
+				const relativeUrl = ( new mediaWiki.Title( 'File:ACDC test file 1.pdf' ) )
+					.getUrl( { action: 'view' } );
+				done( mediaWiki.config.get( 'wgServer' ) + relativeUrl );
+			} );
+			await ACDC.setFileInputValue( url );
+			await browser.keys( [ 'Enter' ] );
+			assert.strictEqual( await ACDC.tagItemText( 1 ), 'File:ACDC test file 1.pdf' );
+		} );
+
+		it( 'parses non-ASCII URL', async () => {
+			const url = await browser.executeAsync( async done => {
+				const relativeUrl = ( new mediaWiki.Title( 'File:20000 тугрик.jpg' ) ).getUrl();
+				done( mediaWiki.config.get( 'wgServer' ) + relativeUrl );
+			} );
+			await ACDC.setFileInputValue( url );
+			await browser.keys( [ 'Enter' ] );
+			assert.strictEqual( await ACDC.tagItemText( 1 ), 'File:20000 тугрик.jpg' );
+		} );
+
 		it( 'supports autocompletion', async () => {
 			await ACDC.setFileInputValue( 'File:ACDC test file 1' /* .pdf */ );
 			const menu = await $( '.oo-ui-lookupElement-menu' );
