@@ -268,24 +268,27 @@
 			try {
 				const url = new URL( input );
 
-				const articlePath = mw.config.get( 'wgArticlePath' ); // like /wiki/$1
-				if ( articlePath.endsWith( '$1' ) && articlePath.indexOf( '?' ) === -1 ) {
-					const articlePathPrefix = articlePath.slice( 0, -2 );
-					if ( `${url.protocol}//${url.host}` === mw.config.get( 'wgServer' ) &&
-						url.pathname.startsWith( `${articlePathPrefix}File:` ) ) {
-						return decodeURIComponent(
-							url.pathname.substring( articlePathPrefix.length ),
-						).replace( /_/g, ' ' );
+				if ( `//${url.host}` === mw.config.get( 'wgServer' ) ||
+					`${url.protocol}//${url.host}` === mw.config.get( 'wgServer' )
+				) {
+					const articlePath = mw.config.get( 'wgArticlePath' ); // like /wiki/$1
+					if ( articlePath.endsWith( '$1' ) && articlePath.indexOf( '?' ) === -1 ) {
+						const articlePathPrefix = articlePath.slice( 0, -2 );
+						if ( url.pathname.startsWith( `${articlePathPrefix}File:` ) ) {
+							return decodeURIComponent(
+								url.pathname.substring( articlePathPrefix.length ),
+							).replace( /_/g, ' ' );
+						}
 					}
-				}
 
-				const script = mw.config.get( 'wgScript' ); // like /w/index.php
-				if ( url.pathname === script ) {
-					const params = url.searchParams;
-					if ( params.has( 'title' ) ) {
-						return decodeURIComponent(
-							params.get( 'title' ),
-						).replace( /_/g, ' ' );
+					const script = mw.config.get( 'wgScript' ); // like /w/index.php
+					if ( url.pathname === script ) {
+						const params = url.searchParams;
+						if ( params.has( 'title' ) ) {
+							return decodeURIComponent(
+								params.get( 'title' ),
+							).replace( /_/g, ' ' );
+						}
 					}
 				}
 			} catch ( e ) {
