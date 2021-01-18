@@ -18,7 +18,7 @@
     "@wdio/mocha-framework": "^6.11.0",
     "@wdio/spec-reporter": "^6.11.0",
     "chromedriver": "^87.0.5",
-    "eslint": "^7.12.1",
+    "eslint": "^7.18.0",
     "eslint-config-wikimedia": "^0.17.0",
     "eslint-plugin-webdriverio": "^1.0.1",
     "mwbot": "^1.0.10",
