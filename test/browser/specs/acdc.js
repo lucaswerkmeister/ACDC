@@ -214,7 +214,7 @@ describe( 'AC/DC', () => {
 			const propertyId = wikibaseItemPropertyId1;
 			const value = itemId1;
 			// reset entity first
-			await browser.executeAsync( async ( entityId, done ) => {
+			const error = await browser.executeAsync( async ( entityId, done ) => {
 				const api = new mediaWiki.Api();
 				await api.postWithEditToken( {
 					action: 'wbeditentity',
@@ -222,9 +222,15 @@ describe( 'AC/DC', () => {
 					summary: 'clear for browser test',
 					data: JSON.stringify( { labels: { en: { value: 'test file for the AC/DC gadget', language: 'en' } } } ),
 					clear: true,
+				} ).catch( ( ...args ) => {
+					done( JSON.stringify( args ) );
+					throw args;
 				} );
 				done();
 			}, entityId );
+			if ( error ) {
+				throw new Error( error );
+			}
 
 			const dialog = await ACDC.dialog;
 			await dialog.waitForDisplayed();
@@ -264,7 +270,7 @@ describe( 'AC/DC', () => {
 			const propertyId = wikibaseItemPropertyId1;
 			const value = itemId1;
 			// reset entity first
-			await browser.executeAsync( async ( entityId1, entityId2, done ) => {
+			const error = await browser.executeAsync( async ( entityId1, entityId2, done ) => {
 				const api = new mediaWiki.Api();
 				const promise1 = api.postWithEditToken( {
 					action: 'wbeditentity',
@@ -272,6 +278,9 @@ describe( 'AC/DC', () => {
 					summary: 'clear for browser test',
 					data: JSON.stringify( { labels: { en: { value: 'test file for the AC/DC gadget', language: 'en' } } } ),
 					clear: true,
+				} ).catch( ( ...args ) => {
+					done( JSON.stringify( args ) );
+					throw args;
 				} );
 				const promise2 = api.postWithEditToken( {
 					action: 'wbeditentity',
@@ -279,10 +288,16 @@ describe( 'AC/DC', () => {
 					summary: 'clear for browser test',
 					data: JSON.stringify( { labels: { en: { value: 'test file for the AC/DC gadget', language: 'en' } } } ),
 					clear: true,
+				} ).catch( ( ...args ) => {
+					done( JSON.stringify( args ) );
+					throw args;
 				} );
 				await Promise.all( [ promise1, promise2 ] );
 				done();
 			}, entityId1, entityId2 );
+			if ( error ) {
+				throw new Error( error );
+			}
 
 			const dialog = await ACDC.dialog;
 			await dialog.waitForDisplayed();
@@ -332,7 +347,7 @@ describe( 'AC/DC', () => {
 			const statementId = `${entityId}$ed9b7656-45c8-9fb2-cd03-3e3cd7e80b08`;
 			const value = itemId1;
 
-			await browser.executeAsync( async ( entityId, propertyId, statementId, value, done ) => {
+			const error = await browser.executeAsync( async ( entityId, propertyId, statementId, value, done ) => {
 				const api = new mediaWiki.Api();
 				await api.postWithEditToken( {
 					action: 'wbeditentity',
@@ -350,9 +365,15 @@ describe( 'AC/DC', () => {
 						} ] },
 					} ),
 					clear: true,
+				} ).catch( ( ...args ) => {
+					done( JSON.stringify( args ) );
+					throw args;
 				} );
 				done();
 			}, entityId, propertyId, statementId, value );
+			if ( error ) {
+				throw new Error( error );
+			}
 
 			const dialog = await ACDC.dialog;
 			await dialog.waitForDisplayed();
@@ -390,7 +411,7 @@ describe( 'AC/DC', () => {
 			const statementId = `${entityId}$e7a7a919-e727-49d3-bfe3-2bc6e1eb5fc7`;
 			const value = itemId1;
 
-			await browser.executeAsync( async ( entityId, propertyId, statementId, value, done ) => {
+			const error = await browser.executeAsync( async ( entityId, propertyId, statementId, value, done ) => {
 				const api = new mediaWiki.Api();
 				await api.postWithEditToken( {
 					action: 'wbeditentity',
@@ -408,9 +429,15 @@ describe( 'AC/DC', () => {
 						} ] },
 					} ),
 					clear: true,
+				} ).catch( ( ...args ) => {
+					done( JSON.stringify( args ) );
+					throw args;
 				} );
 				done();
 			}, entityId, propertyId, statementId, value );
+			if ( error ) {
+				throw new Error( error );
+			}
 
 			const dialog = await ACDC.dialog;
 			await dialog.waitForDisplayed();
@@ -450,7 +477,7 @@ describe( 'AC/DC', () => {
 			const statementId2 = `${entityId2}$1f67af57-36d9-46a6-ac8d-b20d44f7aed9`;
 			const value = itemId1;
 
-			await browser.executeAsync( async ( entityId1, entityId2, propertyId, statementId1, statementId2, value, done ) => {
+			const error = await browser.executeAsync( async ( entityId1, entityId2, propertyId, statementId1, statementId2, value, done ) => {
 				const api = new mediaWiki.Api();
 				const promise1 = api.postWithEditToken( {
 					action: 'wbeditentity',
@@ -468,6 +495,9 @@ describe( 'AC/DC', () => {
 						} ] },
 					} ),
 					clear: true,
+				} ).catch( ( ...args ) => {
+					done( JSON.stringify( args ) );
+					throw args;
 				} );
 				const promise2 = api.postWithEditToken( {
 					action: 'wbeditentity',
@@ -485,10 +515,16 @@ describe( 'AC/DC', () => {
 						} ] },
 					} ),
 					clear: true,
+				} ).catch( ( ...args ) => {
+					done( JSON.stringify( args ) );
+					throw args;
 				} );
 				await Promise.all( [ promise1, promise2 ] );
 				done();
 			}, entityId1, entityId2, propertyId, statementId1, statementId2, value );
+			if ( error ) {
+				throw new Error( error );
+			}
 
 			const dialog = await ACDC.dialog;
 			await dialog.waitForDisplayed();
@@ -538,7 +574,7 @@ describe( 'AC/DC', () => {
 			const value1 = itemId1;
 			const value2 = itemId2;
 
-			await browser.executeAsync( async ( entityId, propertyId1, propertyId2, statementId1, statementId2, statementId3, value1, value2, done ) => {
+			const error = await browser.executeAsync( async ( entityId, propertyId1, propertyId2, statementId1, statementId2, statementId3, value1, value2, done ) => {
 				const api = new mediaWiki.Api();
 				await api.postWithEditToken( {
 					action: 'wbeditentity',
@@ -576,9 +612,15 @@ describe( 'AC/DC', () => {
 						},
 					} ),
 					clear: true,
+				} ).catch( ( ...args ) => {
+					done( JSON.stringify( args ) );
+					throw args;
 				} );
 				done();
 			}, entityId, propertyId1, propertyId2, statementId1, statementId2, statementId3, value1, value2 );
+			if ( error ) {
+				throw new Error( error );
+			}
 
 			const dialog = await ACDC.dialog;
 			await dialog.waitForDisplayed();
@@ -627,7 +669,7 @@ describe( 'AC/DC', () => {
 			const value1 = itemId1;
 			const value2 = itemId2;
 
-			await browser.executeAsync( async ( entityId, propertyId1, propertyId2, statementId1, statementId2, statementId3, value1, value2, done ) => {
+			const error = await browser.executeAsync( async ( entityId, propertyId1, propertyId2, statementId1, statementId2, statementId3, value1, value2, done ) => {
 				const api = new mediaWiki.Api();
 				await api.postWithEditToken( {
 					action: 'wbeditentity',
@@ -665,9 +707,15 @@ describe( 'AC/DC', () => {
 						},
 					} ),
 					clear: true,
+				} ).catch( ( ...args ) => {
+					done( JSON.stringify( args ) );
+					throw args;
 				} );
 				done();
 			}, entityId, propertyId1, propertyId2, statementId1, statementId2, statementId3, value1, value2 );
+			if ( error ) {
+				throw new Error( error );
+			}
 
 			const dialog = await ACDC.dialog;
 			await dialog.waitForDisplayed();
