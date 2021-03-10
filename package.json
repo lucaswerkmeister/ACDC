@@ -21,7 +21,7 @@
     "eslint": "^7.18.0",
     "eslint-config-wikimedia": "^0.17.0",
     "eslint-plugin-webdriverio": "^1.0.1",
-    "mwbot": "^1.0.10",
+    "mwbot": "^2.0.0",
     "stats-webpack-plugin": "^0.7.0",
     "wdio-chromedriver-service": "^7.0.0",
     "webpack-bundle-analyzer": "^3.9.0"
