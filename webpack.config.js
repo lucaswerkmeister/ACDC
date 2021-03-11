@@ -1,5 +1,6 @@
 const webpack = require( 'webpack' );
 const StatsPlugin = require( 'stats-webpack-plugin' );
+const TerserPlugin = require( 'terser-webpack-plugin' );
 
 module.exports = {
 	entry: './acdc.js',
@@ -47,6 +48,14 @@ module.exports = {
 					},
 				},
 			},
+		],
+	},
+	optimization: {
+		minimize: true,
+		minimizer: [
+			new TerserPlugin( {
+				extractComments: false,
+			} ),
 		],
 	},
 	plugins: [

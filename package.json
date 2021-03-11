@@ -4,13 +4,13 @@
   "description": "Wikimedia Commons user script to add a collection of structured data statements to a set of media files.",
   "private": "true",
   "dependencies": {
-    "@babel/core": "^7.12.3",
-    "@babel/preset-env": "^7.12.1",
-    "babel-loader": "^8.1.0",
-    "core-js": "^3.6.5",
+    "@babel/core": "^7.13.10",
+    "@babel/preset-env": "^7.13.10",
+    "babel-loader": "^8.2.2",
+    "core-js": "^3.9.1",
     "regenerator-runtime": "^0.13.7",
-    "webpack": "^4.44.2",
-    "webpack-cli": "^3.3.12"
+    "webpack": "^5.24.4",
+    "webpack-cli": "^4.5.0"
   },
   "devDependencies": {
     "@wdio/cli": "^7.1.1",
@@ -24,7 +24,7 @@
     "mwbot": "^2.0.0",
     "stats-webpack-plugin": "^0.7.0",
     "wdio-chromedriver-service": "^7.0.0",
-    "webpack-bundle-analyzer": "^3.9.0"
+    "webpack-bundle-analyzer": "^4.4.0"
   },
   "scripts": {
     "build": "webpack",
