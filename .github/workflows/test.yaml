@@ -13,6 +13,10 @@ jobs:
         with:
           node-version: '14'
       - run: npm install
+      - name: Wait for other builds to finish (if any)
+        uses: softprops/turnstyle@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: make check
         env:
           MEDIAWIKI_USERNAME: ${{ secrets.MEDIAWIKI_USERNAME }}
