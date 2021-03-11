@@ -17,15 +17,6 @@ module.exports = {
 							[
 								'@babel/preset-env',
 								{
-									targets: [ // https://www.mediawiki.org/wiki/Compatibility#Desktop
-										'last 2 Chrome versions',
-										'IE 11',
-										'last 2 Firefox versions',
-										'Safari 5.1',
-										'Opera 15',
-										'iOS 6.1',
-										'Android 4.1',
-									],
 									useBuiltIns: 'usage',
 									corejs: 3,
 									exclude: [
