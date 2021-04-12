@@ -15,6 +15,32 @@ describe( 'AC/DC', () => {
 		acdc = await fs.readFile( 'acdc.js', { encoding: 'utf8' } );
 	} );
 
+	// call this after loading a page
+	async function installGlobalErrorHandler() {
+		await browser.execute( () => {
+			window.addEventListener( 'error', error => {
+				console.error( 'error!' );
+				window.acdcGlobalError = error;
+			} );
+		} );
+	}
+
+	afterEach( 'check global error handler', async function () {
+		const acdcGlobalErrorMessage = await browser.execute( () => {
+			const acdcGlobalError = window.acdcGlobalError;
+			delete window.acdcGlobalError;
+			if ( acdcGlobalError !== undefined ) {
+				debugger; // eslint-disable-line no-debugger
+				return acdcGlobalError.message;
+			} else {
+				return null;
+			}
+		} );
+		if ( acdcGlobalErrorMessage !== null ) {
+			this.test.error( new Error( `Client-side (in-browser) error: ${acdcGlobalErrorMessage}` ) );
+		}
+	} );
+
 	async function injectAcdc() {
 		await browser.waitUntil( () => browser.execute(
 			() => window.mediaWiki !== undefined &&
@@ -24,6 +50,9 @@ describe( 'AC/DC', () => {
 			window.acdcFavoriteProperties = [];
 		} );
 		await browser.execute( acdc );
+
+		// now is a good time to install the global error handler, too
+		await installGlobalErrorHandler();
 	}
 
 	describe( 'default mode', () => {
@@ -133,11 +162,6 @@ describe( 'AC/DC', () => {
 		} );
 
 		it( 'does nothing on pipe as input', async () => {
-			await browser.execute( () => {
-				window.addEventListener( 'error', error => {
-					window.acdcGlobalError = error;
-				} );
-			} );
 			await ACDC.setFileInputValue( 'File:ACDC test file 1.pdf' );
 			await browser.keys( [ 'Enter' ] );
 			await ACDC.setFileInputValue( '|' );
@@ -148,14 +172,6 @@ describe( 'AC/DC', () => {
 			await browser.keys( [ 'Enter' ] );
 			assert.strictEqual( await ACDC.tagItemText( 1 ), 'File:ACDC test file 1.pdf' );
 			assert.strictEqual( await ACDC.tagItemText( 2 ), 'File:ACDC test file 2.pdf' );
-			const acdcGlobalErrorMessage = await browser.execute( () => {
-				if ( window.acdcGlobalError !== undefined ) {
-					return window.acdcGlobalError.message;
-				} else {
-					return null;
-				}
-			} );
-			assert.strictEqual( acdcGlobalErrorMessage, null );
 		} );
 	} );
 
