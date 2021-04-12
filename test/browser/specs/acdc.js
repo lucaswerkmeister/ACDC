@@ -131,6 +131,32 @@ describe( 'AC/DC', () => {
 			assert.strictEqual( await ACDC.tagItemText( 1 ), 'File:ACDC test file 1.pdf' );
 			assert.strictEqual( await ACDC.tagItemText( 2 ), 'File:ACDC test file 2.pdf' );
 		} );
+
+		it( 'does nothing on pipe as input', async () => {
+			await browser.execute( () => {
+				window.addEventListener( 'error', error => {
+					window.acdcGlobalError = error;
+				} );
+			} );
+			await ACDC.setFileInputValue( 'File:ACDC test file 1.pdf' );
+			await browser.keys( [ 'Enter' ] );
+			await ACDC.setFileInputValue( '|' );
+			// we’re not really interested in behavior here,
+			// but this used to produce console errors: T279852
+			await browser.keys( [ 'Enter' ] );
+			await ACDC.setFileInputValue( 'File:ACDC test file 2.pdf' );
+			await browser.keys( [ 'Enter' ] );
+			assert.strictEqual( await ACDC.tagItemText( 1 ), 'File:ACDC test file 1.pdf' );
+			assert.strictEqual( await ACDC.tagItemText( 2 ), 'File:ACDC test file 2.pdf' );
+			const acdcGlobalErrorMessage = await browser.execute( () => {
+				if ( window.acdcGlobalError !== undefined ) {
+					return window.acdcGlobalError.message;
+				} else {
+					return null;
+				}
+			} );
+			assert.strictEqual( acdcGlobalErrorMessage, null );
+		} );
 	} );
 
 	describe( 'statements', () => {
