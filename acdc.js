@@ -373,9 +373,6 @@
 		} );
 	};
 	FileInputWidget.prototype.getLookupCacheDataFromResponse = function ( response ) {
-		if ( response.query === undefined ) {
-			throw new Error( `T279852: response.query is undefined; response = ${JSON.stringify( response )}` );
-		}
 		return response.query.search.map( result => result.title );
 	};
 	FileInputWidget.prototype.getLookupMenuOptionsFromData = function ( titles ) {
