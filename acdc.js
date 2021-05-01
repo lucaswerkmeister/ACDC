@@ -1140,7 +1140,7 @@
 	// even if it had already been created and attached to the DOM earlier
 	OO.ui.getWindowManager().$element.insertAfter( windowManager.$element );
 	// likewise for the default overlay (and we even want that after/above the default window manager)
-	OO.ui.getDefaultOverlay().$element.insertAfter( OO.ui.getWindowManager().$element );
+	OO.ui.getDefaultOverlay().insertAfter( OO.ui.getWindowManager().$element );
 
 	const portletLink = mw.util.addPortletLink( 'p-tb', '', 'AC/DC', 't-acdc' ),
 		$portletLink = $( portletLink );
