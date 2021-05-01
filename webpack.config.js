@@ -20,7 +20,11 @@ module.exports = {
 									useBuiltIns: 'usage',
 									corejs: 3,
 									exclude: [
-										'es.promise', // polyfilled via es6-promise ResourceLoader module instead
+										// polyfilled via es6-polyfills ResourceLoader module:
+										'es.promise',
+										'es.array.find',
+										'es.array.find-index',
+										'es.array.includes',
 										// supported everywhere, we don’t care about the subtle edge cases that core-js polyfills:
 										'es.array.filter',
 										'es.array.index-of', // not actually used, false positive from prefix.indexOf( '|' ) where prefix is a String, not an Array
