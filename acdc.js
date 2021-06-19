@@ -840,6 +840,7 @@
 			propertyType: datatype,
 			$overlay: this.$overlay,
 			tags: this.tags,
+			showControls: true,
 		} );
 		statementToAddWidget.connect( this, { change: 'updateCanSave' } );
 		statementToAddWidget.connect( this, { change: 'updateSize' } );
@@ -880,6 +881,7 @@
 			propertyType: datatype,
 			$overlay: this.$overlay,
 			tags: this.tags,
+			showControls: true,
 		} );
 		statementToRemoveWidget.connect( this, { change: 'updateCanSave' } );
 		statementToRemoveWidget.connect( this, { change: 'updateSize' } );
