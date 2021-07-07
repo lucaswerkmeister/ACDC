@@ -226,6 +226,10 @@
 .acdc-statementsDialog__statementWidget--statement-to-add-and-remove {
 	border-left: 2px solid red;
 }
+
+.acdc-statementsDialog .wbmi-statement-footer {
+	display: none;
+}
 `;
 		const now = new Date();
 		if ( ( now.getMonth() + 1 ) === 9 && now.getDate() === 23 ) {
