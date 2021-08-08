@@ -41,11 +41,15 @@ describe( 'AC/DC', () => {
 		}
 	} );
 
-	async function injectAcdc() {
+	async function mediaWikiLoaded() {
 		await browser.waitUntil( () => browser.execute(
 			() => window.mediaWiki !== undefined &&
 				window.jQuery !== undefined &&
 				window.mediaWiki.loader.using !== undefined ) );
+	}
+
+	async function injectAcdc() {
+		await mediaWikiLoaded();
 		await browser.execute( () => {
 			window.acdcFavoriteProperties = [];
 		} );
@@ -91,6 +95,39 @@ describe( 'AC/DC', () => {
 		it( 'opens the dialog', async () => {
 			const dialog = await ACDC.dialog;
 			await dialog.waitForDisplayed();
+		} );
+	} );
+
+	describe( '“loaded” hook', () => {
+		beforeEach( 'open blank page', async () => {
+			await browser.url( '/wiki/Special:BlankPage?uselang=en' );
+		} );
+
+		it( 'fires early-registered hook', async () => {
+			await mediaWikiLoaded();
+			await browser.execute( () => {
+				mediaWiki.hook( 'gadget.acdc.loaded' ).add( () => {
+					window.acdcLoaded = true;
+				} );
+			} );
+
+			await injectAcdc();
+
+			await browser.waitUntil( () => browser.execute(
+				() => window.acdcLoaded === true ) );
+		} );
+
+		it( 'fires late-registered hook', async () => {
+			await injectAcdc();
+
+			await browser.execute( () => {
+				mediaWiki.hook( 'gadget.acdc.loaded' ).add( () => {
+					window.acdcLoaded = true;
+				} );
+			} );
+
+			await browser.waitUntil( () => browser.execute(
+				() => window.acdcLoaded === true ) );
 		} );
 	} );
 

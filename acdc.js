@@ -1232,4 +1232,6 @@
 			await statementsDialog.filesWidget.loadPagePile( startupPagePileId );
 		}
 	}
+
+	mw.hook( 'gadget.acdc.loaded' ).fire();
 }( mediaWiki, jQuery ) );
