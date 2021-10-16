@@ -4,8 +4,8 @@
   "description": "Wikimedia Commons user script to add a collection of structured data statements to a set of media files.",
   "private": "true",
   "dependencies": {
-    "@babel/core": "^7.13.10",
-    "@babel/preset-env": "^7.13.10",
+    "@babel/core": "^7.15.8",
+    "@babel/preset-env": "^7.15.8",
     "babel-loader": "^8.2.2",
     "core-js": "^3.9.1",
     "regenerator-runtime": "^0.13.7",
