@@ -10,7 +10,6 @@
 			'oojs-ui.styles.icons-content',
 			'oojs-ui.styles.icons-editing-list',
 			'wikibase.mediainfo.statements',
-			'wikibase.mediainfo.filePageDisplay',
 			'wikibase.utilities.ClaimGuidGenerator',
 			'wikibase.datamodel',
 			'wikibase.serialization',
