@@ -245,6 +245,52 @@
 	}
 
 	/**
+	 * Parse a URL on the local wiki into just a title.
+	 *
+	 * @param {string|URL} url
+	 * @return {string|null} The title, if the URL can be parsed,
+	 * otherwise null (invalid URL, not on the local wiki, …)
+	 */
+	function parseLocalTitle( url ) {
+		if ( !( url instanceof URL ) ) {
+			try {
+				url = new URL( url );
+			} catch ( e ) {
+				return null;
+			}
+		}
+
+		if ( !(
+			`//${url.host}` === mw.config.get( 'wgServer' ) ||
+			`${url.protocol}//${url.host}` === mw.config.get( 'wgServer' )
+		) ) {
+			return null;
+		}
+
+		const articlePath = mw.config.get( 'wgArticlePath' ); // like /wiki/$1
+		if ( articlePath.endsWith( '$1' ) && articlePath.indexOf( '?' ) === -1 ) {
+			const articlePathPrefix = articlePath.slice( 0, -2 );
+			if ( url.pathname.startsWith( articlePathPrefix ) ) {
+				return decodeURIComponent(
+					url.pathname.substring( articlePathPrefix.length ),
+				).replace( /_/g, ' ' );
+			}
+		}
+
+		const script = mw.config.get( 'wgScript' ); // like /w/index.php
+		if ( url.pathname === script ) {
+			const params = url.searchParams;
+			if ( params.has( 'title' ) ) {
+				return decodeURIComponent(
+					params.get( 'title' ),
+				).replace( /_/g, ' ' );
+			}
+		}
+
+		return null;
+	}
+
+	/**
 	 * Ensure that a title begins with the File: namespace.
 	 *
 	 * @param {string} title
@@ -270,34 +316,9 @@
 		if ( input.indexOf( '/' ) !== -1 ) {
 			// file names can never contain a slash, so try to parse as URL
 			// (subpages in the File: namespace exist but they’re not files)
-			try {
-				const url = new URL( input );
-
-				if ( `//${url.host}` === mw.config.get( 'wgServer' ) ||
-					`${url.protocol}//${url.host}` === mw.config.get( 'wgServer' )
-				) {
-					const articlePath = mw.config.get( 'wgArticlePath' ); // like /wiki/$1
-					if ( articlePath.endsWith( '$1' ) && articlePath.indexOf( '?' ) === -1 ) {
-						const articlePathPrefix = articlePath.slice( 0, -2 );
-						if ( url.pathname.startsWith( `${articlePathPrefix}File:` ) ) {
-							return decodeURIComponent(
-								url.pathname.substring( articlePathPrefix.length ),
-							).replace( /_/g, ' ' );
-						}
-					}
-
-					const script = mw.config.get( 'wgScript' ); // like /w/index.php
-					if ( url.pathname === script ) {
-						const params = url.searchParams;
-						if ( params.has( 'title' ) ) {
-							return decodeURIComponent(
-								params.get( 'title' ),
-							).replace( /_/g, ' ' );
-						}
-					}
-				}
-			} catch ( e ) {
-				// ignore, wasn’t a URL after all
+			const title = parseLocalTitle( input );
+			if ( title !== null && title.startsWith( 'File:' ) ) {
+				return title;
 			}
 		}
 
@@ -519,7 +540,7 @@
 			.map( s => s.trim() )
 			.filter( s => s )
 			.filter( input => {
-				// try parsing as PagePile URL, skip in that case
+				// try parsing as well-known URL, skip in that case
 				let url;
 				try {
 					url = new URL( input );
@@ -527,21 +548,30 @@
 					// not a URL
 					return true;
 				}
-				if ( !(
+
+				if (
 					url.host === 'pagepile.toolforge.org' && url.pathname === '/api.php' ||
-					url.host === 'tools.wmflabs.org' && url.pathname === '/pagepile/api.php' )
+					url.host === 'tools.wmflabs.org' && url.pathname === '/pagepile/api.php'
 				) {
-					// not a PagePile URL
-					return true;
+					// PagePile URL
+					const pagePileId = url.searchParams.get( 'id' );
+					if ( pagePileId === null || !/^[1-9][0-9]*$/.test( pagePileId ) ) {
+						// no valid ID
+						return true;
+					}
+					// load it (asynchronously) and skip input as a file in the meantime
+					this.loadPagePile( pagePileId );
+					return false;
 				}
-				const pagePileId = url.searchParams.get( 'id' );
-				if ( pagePileId === null || !/^[1-9][0-9]*$/.test( pagePileId ) ) {
-					// no valid ID
-					return true;
+
+				const title = parseLocalTitle( url );
+				if ( title !== null && title.startsWith( 'Category:' ) ) {
+					// Category URL – load (async) and skip input in the meantime
+					this.loadCategory( title );
+					return false;
 				}
-				// load it (asynchronously) and skip input as a file in the meantime
-				this.loadPagePile( pagePileId );
-				return false;
+
+				return true;
 			} )
 			.map( input => parseFileInput( input ) );
 		this.clearInput();
