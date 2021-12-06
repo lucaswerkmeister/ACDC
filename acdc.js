@@ -399,6 +399,7 @@
 	 * The File: namespace is automatically added where missing.
 	 * The TagMultiselectWidget’s icon is turned into an icon,
 	 * which opens a menu with a button to load files from a PagePile.
+	 * Inputs may also be file or PagePile URLs.
 	 *
 	 * @class
 	 * @extends OO.ui.TagMultiselectWidget
@@ -517,6 +518,31 @@
 		const titles = this.input.getValue().split( '|' )
 			.map( s => s.trim() )
 			.filter( s => s )
+			.filter( input => {
+				// try parsing as PagePile URL, skip in that case
+				let url;
+				try {
+					url = new URL( input );
+				} catch ( e ) {
+					// not a URL
+					return true;
+				}
+				if ( !(
+					url.host === 'pagepile.toolforge.org' && url.pathname === '/api.php' ||
+					url.host === 'tools.wmflabs.org' && url.pathname === '/pagepile/api.php' )
+				) {
+					// not a PagePile URL
+					return true;
+				}
+				const pagePileId = url.searchParams.get( 'id' );
+				if ( pagePileId === null || !/^[1-9][0-9]*$/.test( pagePileId ) ) {
+					// no valid ID
+					return true;
+				}
+				// load it (asynchronously) and skip input as a file in the meantime
+				this.loadPagePile( pagePileId );
+				return false;
+			} )
 			.map( input => parseFileInput( input ) );
 		this.clearInput();
 
