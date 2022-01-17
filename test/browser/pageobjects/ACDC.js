@@ -100,7 +100,7 @@ class ACDC {
 		const submitButton = await this.submitButton;
 		await browser.waitUntil( async () => {
 			const disabled = await submitButton.getAttribute( 'aria-disabled' );
-			return disabled === 'false';
+			return disabled !== 'true';
 		} );
 		await submitButton.click();
 	}
