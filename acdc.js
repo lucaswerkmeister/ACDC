@@ -622,6 +622,14 @@
 
 		return true;
 	};
+	FilesWidget.prototype.loadCatALot = async function () {
+		for ( const [ file ] of mw.libs.catALot.getMarkedLabels() ) {
+			if ( file.startsWith( 'File:' ) ) {
+				this.addTag( file );
+				await microsleep();
+			}
+		}
+	};
 	FilesWidget.prototype.getTitles = function () {
 		return this.getItems().map( item => item.getData() );
 	};
@@ -848,6 +856,10 @@
 			for ( const favoritePropertyToRemove of favoritePropertiesToRemove ) {
 				this.addStatementToRemoveWidget( favoritePropertyToRemove, datatypes[ favoritePropertyToRemove ] );
 			}
+		} );
+
+		this.filesWidget.loadCatALot().catch( () => {
+			// ignore any error (Cat-a-lot not loaded, not active, changed its API…)
 		} );
 	};
 	StatementsDialog.prototype.getSetupProcess = function ( data ) {
