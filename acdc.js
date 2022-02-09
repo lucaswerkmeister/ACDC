@@ -1067,6 +1067,12 @@
 						) ];
 					} );
 
+				let summary;
+				if ( changedStatements.length >= 10 && mw.config.get( 'wgServer' ) === '//commons.wikimedia.org' ) {
+					const hash = Math.floor( Math.random() * Math.pow( 2, 48 ) ).toString( 16 );
+					summary = `([[:toolforge:editgroups-commons/b/CB/${hash}|details]])`;
+				}
+
 				for ( const changedStatement of changedStatements ) {
 					if ( this.stopped ) {
 						this.stopped = false;
@@ -1078,6 +1084,7 @@
 						claim: JSON.stringify( statementSerializer.serialize( changedStatement ) ),
 						baserevid: entityData[ entityId ].lastrevid,
 						bot: 1,
+						summary,
 						tags: this.tags,
 						format: 'json',
 						formatversion: '2',
