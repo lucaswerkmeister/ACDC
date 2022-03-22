@@ -25,7 +25,8 @@
     "mwbot": "^2.0.0",
     "stats-webpack-plugin": "^0.7.0",
     "wdio-chromedriver-service": "^7.2.8",
-    "webpack-bundle-analyzer": "^4.5.0"
+    "webpack-bundle-analyzer": "^4.5.0",
+    "which": "^2.0.2"
   },
   "scripts": {
     "build": "webpack",

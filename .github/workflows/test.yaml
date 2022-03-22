@@ -12,6 +12,9 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: '14'
+      - uses: browser-actions/setup-chrome@latest
+        with:
+          chrome-version: stable
       - run: npm install
       - name: Wait for other builds to finish (if any)
         uses: softprops/turnstyle@v1

@@ -1,6 +1,7 @@
 /* eslint-env node */
 
 const process = require( 'process' );
+const which = require( 'which' );
 
 module.exports.config = {
 	//
@@ -61,6 +62,7 @@ module.exports.config = {
 		browserName: 'chrome',
 		'goog:chromeOptions': {
 			args: process.env.CI ? [ 'headless', 'disable-gpu' ] : [],
+			binary: which.sync( 'chrome' ),
 		},
 		// If outputDir is provided WebdriverIO can capture driver session logs
 		// it is possible to configure which logTypes to include/exclude.
