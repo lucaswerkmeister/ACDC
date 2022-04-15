@@ -274,7 +274,7 @@ describe( 'AC/DC', () => {
 					reason += '\nIf using a bot password, please use the form username / appid@password';
 					reason += ' rather than username@appid / password.';
 					if ( response.login.reason ) {
-						reason += '\n' + reason;
+						reason += '\n' + response.login.reason;
 					}
 					done( reason );
 				} else {
