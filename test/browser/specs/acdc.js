@@ -8,6 +8,8 @@ const assert = require( 'assert' ),
 
 const bot = new MWBot( { apiUrl: `${wdioConf.config.baseUrl}/w/api.php` } );
 
+const ACDC_SUBMIT_TIMEOUT = 60000;
+
 describe( 'AC/DC', () => {
 	let acdc;
 
@@ -327,7 +329,7 @@ describe( 'AC/DC', () => {
 			await ACDC.submit();
 
 			// wait until no longer displayed ⇒ done
-			await dialog.waitForDisplayed( { timeout: 30000, reverse: true } );
+			await dialog.waitForDisplayed( { timeout: ACDC_SUBMIT_TIMEOUT, reverse: true } );
 			const entityData = await browser.executeAsync( async ( entityId, done ) => {
 				const api = new mediaWiki.Api();
 				done( ( await api.get( {
@@ -397,7 +399,7 @@ describe( 'AC/DC', () => {
 			await ACDC.submit();
 
 			// wait until no longer displayed ⇒ done
-			await dialog.waitForDisplayed( { timeout: 30000, reverse: true } );
+			await dialog.waitForDisplayed( { timeout: ACDC_SUBMIT_TIMEOUT, reverse: true } );
 
 			const [ entityData1, entityData2 ] = await browser.executeAsync(
 				async ( entityId1, entityId2, done ) => {
@@ -470,7 +472,7 @@ describe( 'AC/DC', () => {
 			await ACDC.submit();
 
 			// wait until no longer displayed ⇒ done
-			await dialog.waitForDisplayed( { timeout: 30000, reverse: true } );
+			await dialog.waitForDisplayed( { timeout: ACDC_SUBMIT_TIMEOUT, reverse: true } );
 			const entityData = await browser.executeAsync( async ( entityId, done ) => {
 				const api = new mediaWiki.Api();
 				done( ( await api.get( {
@@ -534,7 +536,7 @@ describe( 'AC/DC', () => {
 			await ACDC.submit();
 
 			// wait until no longer displayed ⇒ done
-			await dialog.waitForDisplayed( { timeout: 30000, reverse: true } );
+			await dialog.waitForDisplayed( { timeout: ACDC_SUBMIT_TIMEOUT, reverse: true } );
 			const entityData = await browser.executeAsync( async ( entityId, done ) => {
 				const api = new mediaWiki.Api();
 				done( ( await api.get( {
@@ -624,7 +626,7 @@ describe( 'AC/DC', () => {
 			await ACDC.submit();
 
 			// wait until no longer displayed ⇒ done
-			await dialog.waitForDisplayed( { timeout: 30000, reverse: true } );
+			await dialog.waitForDisplayed( { timeout: ACDC_SUBMIT_TIMEOUT, reverse: true } );
 
 			const [ entityData1, entityData2 ] = await browser.executeAsync(
 				async ( entityId1, entityId2, done ) => {
@@ -725,7 +727,7 @@ describe( 'AC/DC', () => {
 			await ACDC.submit();
 
 			// wait until no longer displayed ⇒ done
-			await dialog.waitForDisplayed( { timeout: 30000, reverse: true } );
+			await dialog.waitForDisplayed( { timeout: ACDC_SUBMIT_TIMEOUT, reverse: true } );
 			const entityData = await browser.executeAsync( async ( entityId, done ) => {
 				const api = new mediaWiki.Api();
 				done( ( await api.get( {
@@ -812,7 +814,7 @@ describe( 'AC/DC', () => {
 			await ACDC.submit();
 
 			// wait until no longer displayed ⇒ done
-			await dialog.waitForDisplayed( { timeout: 30000, reverse: true } );
+			await dialog.waitForDisplayed( { timeout: ACDC_SUBMIT_TIMEOUT, reverse: true } );
 			const entityData = await browser.executeAsync( async ( entityId, done ) => {
 				const api = new mediaWiki.Api();
 				done( ( await api.get( {
