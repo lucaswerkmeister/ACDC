@@ -230,6 +230,11 @@
 .acdc-statementsDialog .wbmi-statement-footer {
 	display: none;
 }
+
+body.acdc-active .uls-menu {
+	z-index: 102; /* Vector @z-index-overlay (101) + 1 */
+	--source-of-this-z-index: '[[c:Help:Gadget-ACDC|AC/DC gadget]]';
+}
 `;
 		const now = new Date();
 		if ( ( now.getMonth() + 1 ) === 9 && now.getDate() === 23 ) {
@@ -863,6 +868,7 @@
 		} );
 	};
 	StatementsDialog.prototype.getSetupProcess = function ( data ) {
+		$( document.body ).toggleClass( 'acdc-active', true );
 		return StatementsDialog.super.prototype.getSetupProcess.call( this, data ).next( async () => {
 			this.title.setLabel( 'AC/DC' );
 			this.actions.setMode( 'edit' );
@@ -870,6 +876,9 @@
 				this.tags = data.tags;
 			}
 		} );
+	};
+	StatementsDialog.prototype.getTeardownProcess = function ( data ) {
+		$( document.body ).toggleClass( 'acdc-active', false );
 	};
 	StatementsDialog.prototype.getReadyProcess = function ( data ) {
 		return StatementsDialog.super.prototype.getReadyProcess.call( this, data ).next( async () => {
