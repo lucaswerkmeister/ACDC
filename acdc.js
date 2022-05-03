@@ -879,6 +879,7 @@ body.acdc-active .uls-menu {
 	};
 	StatementsDialog.prototype.getTeardownProcess = function ( data ) {
 		$( document.body ).toggleClass( 'acdc-active', false );
+		return StatementsDialog.super.prototype.getSetupProcess.call( this, data );
 	};
 	StatementsDialog.prototype.getReadyProcess = function ( data ) {
 		return StatementsDialog.super.prototype.getReadyProcess.call( this, data ).next( async () => {
