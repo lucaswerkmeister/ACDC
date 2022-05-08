@@ -21,7 +21,6 @@ describe( 'AC/DC', () => {
 	async function installGlobalErrorHandler() {
 		await browser.execute( () => {
 			window.addEventListener( 'error', error => {
-				console.error( 'error!' );
 				window.acdcGlobalError = error;
 			} );
 		} );
