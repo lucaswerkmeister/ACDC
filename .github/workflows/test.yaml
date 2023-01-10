@@ -7,6 +7,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # only run one job at a time to avoid edit conflicts
+    concurrency: beta_cluster
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -16,10 +18,6 @@ jobs:
         with:
           chrome-version: stable
       - run: npm install
-      - name: Wait for other builds to finish (if any)
-        uses: softprops/turnstyle@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - run: make check
         env:
           MEDIAWIKI_USERNAME: ${{ secrets.MEDIAWIKI_USERNAME }}
