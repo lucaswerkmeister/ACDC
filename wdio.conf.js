@@ -3,6 +3,18 @@
 const process = require( 'process' );
 const which = require( 'which' );
 
+function whichChrome() {
+	const binaries = [ 'chrome', 'google-chrome-stable', 'chromium' ];
+	for ( const binary of binaries ) {
+		try {
+			return which.sync( binary );
+		} catch ( _ ) {
+			continue;
+		}
+	}
+	throw new Error( `not found: ${binaries.join( 'or' )}` );
+}
+
 module.exports.config = {
 	//
 	// ====================
@@ -62,7 +74,7 @@ module.exports.config = {
 		browserName: 'chrome',
 		'goog:chromeOptions': {
 			args: process.env.CI ? [ 'headless', 'disable-gpu' ] : [],
-			binary: which.sync( 'chrome' ),
+			binary: whichChrome,
 		},
 		// If outputDir is provided WebdriverIO can capture driver session logs
 		// it is possible to configure which logTypes to include/exclude.
