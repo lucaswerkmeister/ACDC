@@ -64,7 +64,7 @@ describe( 'AC/DC', () => {
 		beforeEach( 'open blank page and inject AC/DC code', async () => {
 			await browser.url( '/wiki/Special:BlankPage?uselang=en' );
 			await injectAcdc();
-			await MediaWiki.ensureSidebarShown();
+			await MediaWiki.ensureToolsShown();
 		} );
 
 		it( 'defines the portlet link', async () => {
