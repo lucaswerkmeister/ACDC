@@ -62,7 +62,7 @@ describe( 'AC/DC', () => {
 
 	describe( 'default mode', () => {
 		beforeEach( 'open blank page and inject AC/DC code', async () => {
-			await browser.url( '/wiki/Special:BlankPage?uselang=en' );
+			await browser.url( '/wiki/Special:BlankPage?uselang=en&useskin=vector-2022' );
 			await injectAcdc();
 			await MediaWiki.ensureToolsShown();
 		} );
