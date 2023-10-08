@@ -23,4 +23,12 @@ module.exports = {
 		'no-irregular-whitespace': [ 'error', { skipStrings: true, skipComments: true } ],
 		'no-promise-executor-return': 'off', // eslint/eslint#13668
 	},
+	overrides: [
+		{
+			files: '*.json',
+			rules: {
+				'comma-dangle': 'off',
+			},
+		},
+	],
 };

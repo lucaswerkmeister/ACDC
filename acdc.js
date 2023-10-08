@@ -273,11 +273,11 @@ body.acdc-active .uls-menu {
 		}
 
 		const articlePath = mw.config.get( 'wgArticlePath' ); // like /wiki/$1
-		if ( articlePath.endsWith( '$1' ) && articlePath.indexOf( '?' ) === -1 ) {
+		if ( articlePath.endsWith( '$1' ) && !articlePath.includes( '?' ) ) {
 			const articlePathPrefix = articlePath.slice( 0, -2 );
 			if ( url.pathname.startsWith( articlePathPrefix ) ) {
 				return decodeURIComponent(
-					url.pathname.substring( articlePathPrefix.length ),
+					url.pathname.slice( articlePathPrefix.length ),
 				).replace( /_/g, ' ' );
 			}
 		}
@@ -318,7 +318,7 @@ body.acdc-active .uls-menu {
 	 * @return {string}
 	 */
 	function parseFileInput( input ) {
-		if ( input.indexOf( '/' ) !== -1 ) {
+		if ( input.includes( '/' ) ) {
 			// file names can never contain a slash, so try to parse as URL
 			// (subpages in the File: namespace exist but they’re not files)
 			const title = parseLocalTitle( input );
@@ -383,7 +383,7 @@ body.acdc-active .uls-menu {
 	};
 	FileInputWidget.prototype.getLookupRequest = function () {
 		const prefix = this.getValue();
-		if ( !prefix || prefix.indexOf( '|' ) !== -1 ) {
+		if ( !prefix || prefix.includes( '|' ) ) {
 			const response = {
 				query: {
 					search: [],
