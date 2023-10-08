@@ -33,6 +33,7 @@ module.exports = {
 										'es.array.some',
 										'es.array.splice',
 										'es.promise',
+										'es.set',
 										'es.string.replace',
 										'es.string.search', // not actually used, false positive from response.query.search where response is API response JSON
 										'es.string.split',
