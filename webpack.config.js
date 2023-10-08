@@ -54,6 +54,11 @@ module.exports = {
 			} ),
 		],
 	},
+	output: {
+		environment: {
+			arrowFunction: false,
+		},
+	},
 	plugins: [
 		new webpack.BannerPlugin( `
 Add to Commons / Descriptive Claims (ACDC)
