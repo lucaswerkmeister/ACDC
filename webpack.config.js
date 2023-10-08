@@ -20,6 +20,9 @@ module.exports = {
 									useBuiltIns: 'usage',
 									corejs: 3,
 									exclude: [
+										// polyfilled via web2017-polyfills ResourceLoader module:
+										'web.url',
+										'web.url-search-params',
 										// supported everywhere, we don’t care about the subtle edge cases that core-js polyfills:
 										'es.array.filter',
 										'es.array.includes',

@@ -18,6 +18,7 @@
 			'mediawiki.util',
 			'mediawiki.Title',
 			'jquery.i18n',
+			'web2017-polyfills',
 		] ),
 		ClaimGuidGenerator = wikibase.utilities.ClaimGuidGenerator,
 		{ Statement, Claim, PropertyNoValueSnak } = require( 'wikibase.datamodel' ),
