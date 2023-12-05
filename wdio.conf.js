@@ -12,7 +12,7 @@ function whichChrome() {
 			continue;
 		}
 	}
-	throw new Error( `not found: ${binaries.join( 'or' )}` );
+	throw new Error( `not found: ${ binaries.join( 'or' ) }` );
 }
 
 module.exports.config = {

@@ -98,7 +98,7 @@
 				formatversion: 2,
 			} );
 			for ( const page of response.query.pages ) {
-				entityIds[ page.title ] = `M${page.pageid}`;
+				entityIds[ page.title ] = `M${ page.pageid }`;
 			}
 		}
 		return entityIds;
@@ -181,7 +181,7 @@
 	}
 
 	function failSanityCheck( component ) {
-		throw new Error( `${component} seems to have changed incompatibly, AC/DC must be updated before it can be safely used!` );
+		throw new Error( `${ component } seems to have changed incompatibly, AC/DC must be updated before it can be safely used!` );
 	}
 
 	function sanityCheckStatementWidgetPropertyId() {
@@ -267,8 +267,8 @@ body.acdc-active .uls-menu {
 		}
 
 		if ( !(
-			`//${url.host}` === mw.config.get( 'wgServer' ) ||
-			`${url.protocol}//${url.host}` === mw.config.get( 'wgServer' )
+			`//${ url.host }` === mw.config.get( 'wgServer' ) ||
+			`${ url.protocol }//${ url.host }` === mw.config.get( 'wgServer' )
 		) ) {
 			return null;
 		}
@@ -306,7 +306,7 @@ body.acdc-active .uls-menu {
 		if ( title.startsWith( 'File:' ) ) {
 			return title;
 		} else {
-			return `File:${title}`;
+			return `File:${ title }`;
 		}
 	}
 
@@ -398,7 +398,7 @@ body.acdc-active .uls-menu {
 		return api.get( {
 			action: 'query',
 			list: 'search',
-			srsearch: `prefix:${ensureFileNamespace( prefix )}`,
+			srsearch: `prefix:${ ensureFileNamespace( prefix ) }`,
 			srinfo: [ /* no metadata */ ],
 			srprop: [ /* no properties (we only need title, which is always returned) */ ],
 			formatversion: 2,
@@ -514,13 +514,13 @@ body.acdc-active .uls-menu {
 			}
 
 			if ( !categoryTitle.startsWith( 'Category:' ) ) {
-				categoryTitle = `Category:${categoryTitle}`;
+				categoryTitle = `Category:${ categoryTitle }`;
 			}
 
 			try {
 				await this.loadCategory( categoryTitle );
 			} catch ( e ) {
-				await OO.ui.alert( `Error: ${e}` );
+				await OO.ui.alert( `Error: ${ e }` );
 			}
 		} );
 
@@ -603,7 +603,7 @@ body.acdc-active .uls-menu {
 	};
 	FilesWidget.prototype.loadPagePile = async function ( pagePileId ) {
 		const pileJson = await fetch(
-			`https://pagepile.toolforge.org/api.php?action=get_data&id=${pagePileId}&format=json`,
+			`https://pagepile.toolforge.org/api.php?action=get_data&id=${ pagePileId }&format=json`,
 		).then( r => r.json() );
 		if ( pileJson.wiki !== mw.config.get( 'wgDBname' ) ) {
 			await OO.ui.alert( $.i18n( 'gadget-acdc-load-pagepile-error-wrong-wiki' ) );
@@ -1033,7 +1033,7 @@ body.acdc-active .uls-menu {
 		let summary;
 		if ( titles.length >= 10 && mw.config.get( 'wgServer' ) === '//commons.wikimedia.org' ) {
 			const hash = Math.floor( Math.random() * Math.pow( 2, 48 ) ).toString( 16 );
-			summary = `([[:toolforge:editgroups-commons/b/CB/${hash}|details]])`;
+			summary = `([[:toolforge:editgroups-commons/b/CB/${ hash }|details]])`;
 		}
 
 		await Promise.all( this.statementToAddWidgets.map(
@@ -1112,7 +1112,9 @@ body.acdc-active .uls-menu {
 						format: 'json',
 						formatversion: '2',
 						errorformat: 'plaintext',
-					} ) ).catch( ( ...args ) => { throw args; } ); // jQuery can reject with multiple errors, native promises can’t
+					} ) ).catch( ( ...args ) => {
+						throw args; // jQuery can reject with multiple errors, native promises can’t
+					} );
 					// TODO handle API errors better
 				}
 
@@ -1134,7 +1136,7 @@ body.acdc-active .uls-menu {
 							}
 						} );
 						if ( matchingStatementIds.length > 1 ) {
-							console.warn( `Deleting more than one matching statement on ${entityId}`, matchingStatementIds );
+							console.warn( `Deleting more than one matching statement on ${ entityId }`, matchingStatementIds );
 						}
 						return matchingStatementIds;
 					} );
@@ -1156,7 +1158,9 @@ body.acdc-active .uls-menu {
 						format: 'json',
 						formatversion: '2',
 						errorformat: 'plaintext',
-					} ) ).catch( ( ...args ) => { throw args; } ); // jQuery can reject with multiple errors, native promises can’t
+					} ) ).catch( ( ...args ) => {
+						throw args; // jQuery can reject with multiple errors, native promises can’t
+					} );
 					// TODO handle API errors better
 				}
 

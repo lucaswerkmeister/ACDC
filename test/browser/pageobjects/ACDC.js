@@ -48,7 +48,7 @@ class ACDC {
 
 	tagItem( index /* 1-indexed */ ) {
 		return this.filesWidget
-			.then( filesWidget => filesWidget.$( `.oo-ui-tagItemWidget:nth-child(${index})` ) );
+			.then( filesWidget => filesWidget.$( `.oo-ui-tagItemWidget:nth-child(${ index })` ) );
 	}
 
 	tagItemText( index /* 1-indexed */ ) {
@@ -60,7 +60,7 @@ class ACDC {
 		return this.dialog
 			.then( dialog => new StatementWidget(
 				dialog.$( `.acdc-statementsDialog-statementsToAddField
-                           .oo-ui-widget:nth-child(${index})
+                           .oo-ui-widget:nth-child(${ index })
                            .wbmi-statements-widget` ) ) );
 	}
 
@@ -68,7 +68,7 @@ class ACDC {
 		return this.dialog
 			.then( dialog => new StatementWidget(
 				dialog.$( `.acdc-statementsDialog-statementsToRemoveField
-                           .oo-ui-widget:nth-child(${index})
+                           .oo-ui-widget:nth-child(${ index })
                            .wbmi-statements-widget` ) ) );
 	}
 

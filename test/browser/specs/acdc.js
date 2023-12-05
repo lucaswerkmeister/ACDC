@@ -6,7 +6,7 @@ const assert = require( 'assert' ),
 	ACDC = require( '../pageobjects/ACDC' ),
 	MediaWiki = require( '../pageobjects/MediaWiki' );
 
-const bot = new MWBot( { apiUrl: `${wdioConf.config.baseUrl}/w/api.php` } );
+const bot = new MWBot( { apiUrl: `${ wdioConf.config.baseUrl }/w/api.php` } );
 
 const ACDC_SUBMIT_TIMEOUT = 60000;
 
@@ -38,7 +38,7 @@ describe( 'AC/DC', () => {
 			}
 		} );
 		if ( acdcGlobalErrorMessage !== null ) {
-			this.test.error( new Error( `Client-side (in-browser) error: ${acdcGlobalErrorMessage}` ) );
+			this.test.error( new Error( `Client-side (in-browser) error: ${ acdcGlobalErrorMessage }` ) );
 		}
 	} );
 
@@ -271,7 +271,7 @@ describe( 'AC/DC', () => {
 					// If lgusername !== username, we may be logged in now,
 					// but we won’t be able to detect “already logged in” above
 					// for the next test run, so better to fail here.
-					let reason = `Expected to log in as ${username} but returned ${response.login.lgusername}.`;
+					let reason = `Expected to log in as ${ username } but returned ${ response.login.lgusername }.`;
 					reason += '\nIf using a bot password, please use the form username / appid@password';
 					reason += ' rather than username@appid / password.';
 					if ( response.login.reason ) {
@@ -290,7 +290,7 @@ describe( 'AC/DC', () => {
 
 		it( 'can add a single statement', async () => {
 			const file = 'File:ACDC test file 1.pdf';
-			const entityId = `M${filePageIds[ file ]}`;
+			const entityId = `M${ filePageIds[ file ] }`;
 			const propertyId = wikibaseItemPropertyId1;
 			const value = itemId1;
 			// reset entity first
@@ -345,8 +345,8 @@ describe( 'AC/DC', () => {
 		it( 'can add a single statement to two files', async () => {
 			const file1 = 'File:ACDC test file 1.pdf';
 			const file2 = 'File:ACDC test file 2.pdf';
-			const entityId1 = `M${filePageIds[ file1 ]}`;
-			const entityId2 = `M${filePageIds[ file2 ]}`;
+			const entityId1 = `M${ filePageIds[ file1 ] }`;
+			const entityId2 = `M${ filePageIds[ file2 ] }`;
 			const propertyId = wikibaseItemPropertyId1;
 			const value = itemId1;
 			// reset entity first
@@ -422,9 +422,9 @@ describe( 'AC/DC', () => {
 
 		it( 'does not re-add an existing statement', async () => {
 			const file = 'File:ACDC test file 1.pdf';
-			const entityId = `M${filePageIds[ file ]}`;
+			const entityId = `M${ filePageIds[ file ] }`;
 			const propertyId = wikibaseItemPropertyId1;
-			const statementId = `${entityId}$ed9b7656-45c8-9fb2-cd03-3e3cd7e80b08`;
+			const statementId = `${ entityId }$ed9b7656-45c8-9fb2-cd03-3e3cd7e80b08`;
 			const value = itemId1;
 
 			const error = await browser.executeAsync( async ( entityId, propertyId, statementId, value, done ) => {
@@ -486,9 +486,9 @@ describe( 'AC/DC', () => {
 
 		it( 'can remove a single statement', async () => {
 			const file = 'File:ACDC test file 1.pdf';
-			const entityId = `M${filePageIds[ file ]}`;
+			const entityId = `M${ filePageIds[ file ] }`;
 			const propertyId = wikibaseItemPropertyId1;
-			const statementId = `${entityId}$e7a7a919-e727-49d3-bfe3-2bc6e1eb5fc7`;
+			const statementId = `${ entityId }$e7a7a919-e727-49d3-bfe3-2bc6e1eb5fc7`;
 			const value = itemId1;
 
 			const error = await browser.executeAsync( async ( entityId, propertyId, statementId, value, done ) => {
@@ -550,11 +550,11 @@ describe( 'AC/DC', () => {
 		it( 'can remove a single statement from two files', async () => {
 			const file1 = 'File:ACDC test file 1.pdf';
 			const file2 = 'File:ACDC test file 2.pdf';
-			const entityId1 = `M${filePageIds[ file1 ]}`;
-			const entityId2 = `M${filePageIds[ file2 ]}`;
+			const entityId1 = `M${ filePageIds[ file1 ] }`;
+			const entityId2 = `M${ filePageIds[ file2 ] }`;
 			const propertyId = wikibaseItemPropertyId1;
-			const statementId1 = `${entityId1}$7656a423-af3a-4c94-8b87-bd559931e60a`;
-			const statementId2 = `${entityId2}$1f67af57-36d9-46a6-ac8d-b20d44f7aed9`;
+			const statementId1 = `${ entityId1 }$7656a423-af3a-4c94-8b87-bd559931e60a`;
+			const statementId2 = `${ entityId2 }$1f67af57-36d9-46a6-ac8d-b20d44f7aed9`;
 			const value = itemId1;
 
 			const error = await browser.executeAsync( async ( entityId1, entityId2, propertyId, statementId1, statementId2, value, done ) => {
@@ -645,12 +645,12 @@ describe( 'AC/DC', () => {
 
 		it( 'can remove multiple statements', async () => {
 			const file = 'File:ACDC test file 1.pdf';
-			const entityId = `M${filePageIds[ file ]}`;
+			const entityId = `M${ filePageIds[ file ] }`;
 			const propertyId1 = wikibaseItemPropertyId1;
 			const propertyId2 = wikibaseItemPropertyId2;
-			const statementId1 = `${entityId}$fb7806eb-076e-47ad-9171-448b6dd5878b`;
-			const statementId2 = `${entityId}$ec941087-695f-41cc-b0cd-459827425c58`;
-			const statementId3 = `${entityId}$0717cf93-cc74-4ca9-b434-21209ce935d0`;
+			const statementId1 = `${ entityId }$fb7806eb-076e-47ad-9171-448b6dd5878b`;
+			const statementId2 = `${ entityId }$ec941087-695f-41cc-b0cd-459827425c58`;
+			const statementId3 = `${ entityId }$0717cf93-cc74-4ca9-b434-21209ce935d0`;
 			const value1 = itemId1;
 			const value2 = itemId2;
 
@@ -740,12 +740,12 @@ describe( 'AC/DC', () => {
 
 		it( 'does not remove other statements', async () => {
 			const file = 'File:ACDC test file 1.pdf';
-			const entityId = `M${filePageIds[ file ]}`;
+			const entityId = `M${ filePageIds[ file ] }`;
 			const propertyId1 = wikibaseItemPropertyId1;
 			const propertyId2 = wikibaseItemPropertyId2;
-			const statementId1 = `${entityId}$fb7806eb-076e-47ad-9171-448b6dd5878b`;
-			const statementId2 = `${entityId}$ec941087-695f-41cc-b0cd-459827425c58`;
-			const statementId3 = `${entityId}$0717cf93-cc74-4ca9-b434-21209ce935d0`;
+			const statementId1 = `${ entityId }$fb7806eb-076e-47ad-9171-448b6dd5878b`;
+			const statementId2 = `${ entityId }$ec941087-695f-41cc-b0cd-459827425c58`;
+			const statementId3 = `${ entityId }$0717cf93-cc74-4ca9-b434-21209ce935d0`;
 			const value1 = itemId1;
 			const value2 = itemId2;
 
