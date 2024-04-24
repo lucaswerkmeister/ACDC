@@ -10,8 +10,8 @@ jobs:
     # only run one job at a time to avoid edit conflicts
     concurrency: beta_cluster
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
       - uses: browser-actions/setup-chrome@latest
