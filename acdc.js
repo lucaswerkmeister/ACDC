@@ -1,6 +1,4 @@
-( function ( mw, $ ) {
-/* eslint-disable indent */
-( async function () {
+( async function ( mw, $ ) {
 	'use strict';
 
 	const require = await mw.loader.using( [
@@ -1264,5 +1262,4 @@ body.acdc-active .uls-menu {
 	}
 
 	mw.hook( 'gadget.acdc.loaded' ).fire();
-}() );
 }( mediaWiki, jQuery ) );
