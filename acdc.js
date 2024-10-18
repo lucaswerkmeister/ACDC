@@ -233,7 +233,7 @@
 }
 
 body.acdc-active .uls-menu {
-	z-index: 102; /* Vector @z-index-overlay (101) + 1 */
+	z-index: 451; /* MediaWiki core @z-index-overlay (450) + 1 */
 	--source-of-this-z-index: '[[c:Help:Gadget-ACDC|AC/DC gadget]]';
 }
 `;
