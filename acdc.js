@@ -13,7 +13,6 @@
 			'wikibase.utilities.ClaimGuidGenerator',
 			'wikibase.datamodel',
 			'wikibase.serialization',
-			'wikibase.common',
 			'mediawiki.api',
 			'mediawiki.util',
 			'mediawiki.Title',
