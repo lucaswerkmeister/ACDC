@@ -79,6 +79,8 @@
 		},
 	} );
 
+	const api = new mw.Api( { userAgent: 'AC/DC (https://commons.wikimedia.org/wiki/Help:Gadget-ACDC)' } );
+
 	/**
 	 * Maps titles to entity IDs.
 	 *
@@ -86,8 +88,7 @@
 	 * @return {Promise<Object.<string,string>>} map from title to entity ID
 	 */
 	async function titlesToEntityIds( titles ) {
-		const api = new mw.Api(),
-			allTitles = titles.slice(), // copy that we can splice without affecting the original
+		const allTitles = titles.slice(), // copy that we can splice without affecting the original
 			entityIds = {};
 		let someTitles;
 		while ( ( someTitles = allTitles.splice( 0, 50 ) ).length > 0 ) {
@@ -111,8 +112,7 @@
 	 * @return {Promise<Object.<string,Object>>} map from entity ID to entity data
 	 */
 	async function entityIdsToData( entityIds, props ) {
-		const api = new mw.Api(),
-			allEntityIds = entityIds.slice(), // copy that we can splice without affecting the original
+		const allEntityIds = entityIds.slice(), // copy that we can splice without affecting the original
 			entityData = {};
 		let someEntityIds;
 		while ( ( someEntityIds = allEntityIds.splice( 0, 50 ) ).length > 0 ) {
@@ -129,16 +129,15 @@
 	}
 
 	async function* categoryFiles( categoryTitle ) {
-		const api = new mw.Api(),
-			originalParams = {
-				action: 'query',
-				list: 'categorymembers',
-				cmtitle: categoryTitle,
-				cmprop: [ 'title' ],
-				cmtype: [ 'file' ],
-				cmlimit: 'max',
-				formatversion: 2,
-			};
+		const originalParams = {
+			action: 'query',
+			list: 'categorymembers',
+			cmtitle: categoryTitle,
+			cmprop: [ 'title' ],
+			cmtype: [ 'file' ],
+			cmlimit: 'max',
+			formatversion: 2,
+		};
 		let response = {};
 		do {
 			response = await api.get( Object.assign( {}, originalParams, response.continue ) );
@@ -156,13 +155,12 @@
 		if ( !propertyIds.length ) {
 			return {};
 		}
-		const api = new mw.Api(),
-			response = await api.get( {
-				action: 'wbgetentities',
-				ids: propertyIds,
-				props: [ 'datatype' ],
-				formatversion: 2,
-			} );
+		const response = await api.get( {
+			action: 'wbgetentities',
+			ids: propertyIds,
+			props: [ 'datatype' ],
+			formatversion: 2,
+		} );
 		return Object.fromEntries(
 			Object.entries( response.entities )
 				.map( ( [ propertyId, { datatype } ] ) => [ propertyId, datatype ] ) );
@@ -393,7 +391,6 @@ body.acdc-active .uls-menu {
 			return $.Deferred().resolve( response ).promise();
 		}
 
-		const api = new mw.Api();
 		return api.get( {
 			action: 'query',
 			list: 'search',
@@ -1046,8 +1043,7 @@ body.acdc-active .uls-menu {
 		const entityData = await entityIdsToData( Object.values( entityIds ), [ 'info', 'claims' ] );
 		this.statementsProgressBarWidget.finishedLoadingEntityData();
 
-		const api = new mw.Api(),
-			statementListDeserializer = new StatementListDeserializer(),
+		const statementListDeserializer = new StatementListDeserializer(),
 			statementSerializer = new StatementSerializer(),
 			statementDeserializer = new StatementDeserializer();
 		for ( const [ title, entityId ] of Object.entries( entityIds ) ) {
