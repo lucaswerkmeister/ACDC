@@ -27,12 +27,13 @@ In other words, `rm -rf node_modules/ && npm install --prod && make all` should 
 ## License
 
 As this script is published on Wikimedia Commons,
-it falls under the Creative Commons Attribution-ShareAlike 3.0 Unported license
-([CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/)).
-Additionally, I place it under the Creative Commons Attribution-ShareAlike 4.0 International license
-([CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)),
-and I’m open to publishing it under other free licenses too.
+it falls under the Creative Commons Attribution-ShareAlike 4.0 International license
+([CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/)).
+(Earlier versions also fell under the Creative Commons Attribution-ShareAlike 3.0 Unported license
+([CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/));
+those versions were explicitly dual-licensed under CC BY-SA 4.0 as well.)
+I’m also open to publishing it under other free licenses.
 
 If you contribute to this script,
-you agree to release your contributions under the same licenses,
+you agree to release your contributions under the same license,
 and I may contact you in the future to request additional licenses.
