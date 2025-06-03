@@ -73,7 +73,7 @@
 		// (and yes, this means the i18n only works on wikis with nice URLs)
 	);
 	// implement {{int:}}, see https://github.com/wikimedia/jquery.i18n/issues/211
-	$.extend( $.i18n.parser.emitter, {
+	Object.assign( $.i18n.parser.emitter, {
 		int( nodes ) {
 			return $.i18n( ...nodes );
 		},
@@ -345,10 +345,10 @@ body.acdc-active .uls-menu {
 	 * @cfg {string[]} [skippedFiles] Don’t suggest these files in the lookup.
 	 */
 	function FileInputWidget( config ) {
-		FileInputWidget.super.call( this, $.extend( {
+		FileInputWidget.super.call( this, Object.assign( {
 			placeholder: $.i18n( 'gadget-acdc-file-placeholder' ),
 		}, config ) );
-		OO.ui.mixin.LookupElement.call( this, $.extend( {
+		OO.ui.mixin.LookupElement.call( this, Object.assign( {
 			showPendingRequest: false,
 			$container: this.$input, // the default is this.$element, which in a non-'outline' TagMultiselectWidget is never attached to the DOM, so the lookup can’t position itself relative to it
 		}, config ) );
@@ -406,12 +406,10 @@ body.acdc-active .uls-menu {
 	FileInputWidget.prototype.getLookupMenuOptionsFromData = function ( titles ) {
 		return titles
 			.filter( title => !this.skippedFiles.includes( title ) )
-			.map( title => {
-				return new OO.ui.MenuOptionWidget( {
-					data: title,
-					label: title,
-				} );
-			} );
+			.map( title => new OO.ui.MenuOptionWidget( {
+				data: title,
+				label: title,
+			} ) );
 	};
 
 	/**
@@ -431,9 +429,9 @@ body.acdc-active .uls-menu {
 	 * @param {Object} [config] Configuration options
 	 */
 	function FilesWidget( config ) {
-		FilesWidget.super.call( this, $.extend( {
+		FilesWidget.super.call( this, Object.assign( {
 			allowArbitrary: true,
-			inputWidget: new FileInputWidget( $.extend( {
+			inputWidget: new FileInputWidget( Object.assign( {
 				placeholder: $.i18n( 'gadget-acdc-files-placeholder' ),
 			}, config ) ),
 			icon: 'ellipsis',
@@ -650,7 +648,7 @@ body.acdc-active .uls-menu {
 	 * @param {Object} [config] Configuration options
 	 */
 	function StatementsProgressBarWidget( config ) {
-		StatementsProgressBarWidget.super.call( this, $.extend( {
+		StatementsProgressBarWidget.super.call( this, Object.assign( {
 			progress: 0,
 		}, config ) );
 		this.toggle( false );
@@ -725,7 +723,7 @@ body.acdc-active .uls-menu {
 	 * @cfg {string[]} [tags] Change tags to apply to edits.
 	 */
 	function StatementsDialog( config ) {
-		StatementsDialog.super.call( this, $.extend( {
+		StatementsDialog.super.call( this, Object.assign( {
 			size: 'large',
 		}, config ) );
 		this.tags = ( config || {} ).tags || [];
