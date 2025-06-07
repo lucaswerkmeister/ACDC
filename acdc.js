@@ -179,7 +179,7 @@
 		} );
 		// TODO change back to Object.fromEntries() once MediaWiki supports ES2019
 		const datatypes = {};
-		for ( const [ propertyId, { datatype } ] of response.entities ) {
+		for ( const [ propertyId, { datatype } ] of Object.entries( response.entities ) ) {
 			datatypes[ propertyId ] = datatype;
 		}
 		return datatypes;
