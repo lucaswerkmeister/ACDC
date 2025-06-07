@@ -128,7 +128,8 @@
 		return entityData;
 	}
 
-	async function* categoryFiles( categoryTitle ) {
+	// TODO change back to an async generator function once MediaWiki supports for-await-of (T395347)
+	async function categoryFiles( categoryTitle, callback ) {
 		const originalParams = {
 			action: 'query',
 			list: 'categorymembers',
@@ -141,7 +142,9 @@
 		let response = {};
 		do {
 			response = await api.get( Object.assign( {}, originalParams, response.continue ) );
-			yield* response.query.categorymembers.map( member => member.title );
+			for ( const { title } of response.query.categorymembers ) {
+				await callback( title );
+			}
 		} while ( 'continue' in response );
 	}
 
@@ -161,9 +164,12 @@
 			props: [ 'datatype' ],
 			formatversion: 2,
 		} );
-		return Object.fromEntries(
-			Object.entries( response.entities )
-				.map( ( [ propertyId, { datatype } ] ) => [ propertyId, datatype ] ) );
+		// TODO change back to Object.fromEntries() once MediaWiki supports ES2019
+		const datatypes = {};
+		for ( const [ propertyId, { datatype } ] of response.entities ) {
+			datatypes[ propertyId ] = datatype;
+		}
+		return datatypes;
 	}
 
 	/**
@@ -590,10 +596,10 @@ body.acdc-active .uls-menu {
 		}
 	};
 	FilesWidget.prototype.loadCategory = async function ( categoryTitle ) {
-		for await ( const file of categoryFiles( categoryTitle ) ) {
+		await categoryFiles( categoryTitle, async file => {
 			this.addTag( file );
 			await microsleep();
-		}
+		} );
 	};
 	FilesWidget.prototype.loadPagePile = async function ( pagePileId ) {
 		const pileJson = await fetch(
@@ -1050,8 +1056,9 @@ body.acdc-active .uls-menu {
 			for ( const statementToAddWidget of this.statementToAddWidgets ) {
 				const previousStatements = statementListDeserializer.deserialize(
 					entityData[ entityId ].statements[ statementToAddWidget.state.propertyId ] || [] );
-				const changedStatements = statementToAddWidget.getData().toArray()
-					.flatMap( newStatement => {
+				// TODO change [].concat(...X.map()) back to X.flatMap() once MediaWiki supports ES2019
+				const changedStatements = [].concat( ...statementToAddWidget.getData().toArray()
+					.map( newStatement => {
 						for ( const previousStatement of previousStatements.toArray() ) {
 							if ( newStatement.getClaim().getMainSnak().equals( previousStatement.getClaim().getMainSnak() ) ) {
 								// main value matches
@@ -1087,7 +1094,7 @@ body.acdc-active .uls-menu {
 							newStatement.getReferences(),
 							newStatement.getRank(),
 						) ];
-					} );
+					} ) );
 
 				for ( const changedStatement of changedStatements ) {
 					if ( this.stopped ) {
@@ -1119,20 +1126,22 @@ body.acdc-active .uls-menu {
 			for ( const statementToRemoveWidget of this.statementToRemoveWidgets ) {
 				const previousStatements = statementListDeserializer.deserialize(
 					entityData[ entityId ].statements[ statementToRemoveWidget.state.propertyId ] || [] );
-				const statementIdsToRemove = statementToRemoveWidget.getData().toArray()
-					.flatMap( statementToRemove => {
-						const matchingStatementIds = previousStatements.toArray().flatMap( statement => {
+				// TODO change [].concat(...X.map()) back to X.flatMap() once MediaWiki supports ES2019
+				const statementIdsToRemove = [].concat( ...statementToRemoveWidget.getData().toArray()
+					.map( statementToRemove => {
+						// TODO change [].concat(...X.map()) back to X.flatMap() once MediaWiki supports ES2019
+						const matchingStatementIds = [].concat( ...previousStatements.toArray().map( statement => {
 							if ( statement.getClaim().getMainSnak().equals( statementToRemove.getClaim().getMainSnak() ) ) {
 								return [ statement.getClaim().getGuid() ];
 							} else {
 								return [];
 							}
-						} );
+						} ) );
 						if ( matchingStatementIds.length > 1 ) {
 							console.warn( `Deleting more than one matching statement on ${ entityId }`, matchingStatementIds );
 						}
 						return matchingStatementIds;
-					} );
+					} ) );
 
 				for ( const statementIdToRemove of statementIdsToRemove ) {
 					if ( this.stopped ) {
