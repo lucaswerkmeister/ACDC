@@ -13,16 +13,15 @@ Code changes to `acdc.js` become effective after a reload of the page
 Note that this is only possible in Firefox –
 I’m not aware of a way for a WebExtension to run code in the page content in Chrome or other browsers.
 
-For deployment, run `make all` to build the Commons version of the script,
-copy `dist/main.js` to the clipboard and save that on [`MediaWiki:Gadget-ACDC.js`](https://commons.wikimedia.org/wiki/MediaWiki:Gadget-ACDC.js).
+For deployment, copy `acdc.js` to the clipboard
+and save that on [`MediaWiki:Gadget-ACDC.js`](https://commons.wikimedia.org/wiki/MediaWiki:Gadget-ACDC.js).
 Afterwards, copy the page revision from the “permanent link” in the sidebar
 and tag the current commit as <code>r<var>revid</var></code>,
 then push `main` and that tag to `origin`.
 
-When introducing new dependencies in `package.json`,
-add them to `dependencies` if they’re necessary to build the gadget (`make all`),
-or to `devDependencies` if they’re only necessary to test it (`make check`).
-In other words, `rm -rf node_modules/ && npm install --prod && make all` should always succeed.
+All dependencies in `package.json` should be `devDependencies`.
+(Prior to June 2025, non-dev dependencies were those required to build the gadget,
+but the build step is no longer necessary and as such only dev / test dependencies remain.)
 
 ## License
 

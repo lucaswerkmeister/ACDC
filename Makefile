@@ -1,10 +1,4 @@
-.PHONY: all clean check
-
-all:
-	npm run build
-
-clean:
-	$(RM) -r dist/
+.PHONY: check
 
 check:
 	npm test

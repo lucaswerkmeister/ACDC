@@ -3,15 +3,6 @@
 	"version": "0.1.0",
 	"description": "Wikimedia Commons user script to add a collection of structured data statements to a set of media files.",
 	"private": "true",
-	"dependencies": {
-		"@babel/core": "^7.15.8",
-		"@babel/preset-env": "^7.15.8",
-		"babel-loader": "^8.2.2",
-		"core-js": "^3.18.3",
-		"regenerator-runtime": "^0.13.9",
-		"webpack": "^5.88.2",
-		"webpack-cli": "^5.1.4"
-	},
 	"devDependencies": {
 		"@wdio/cli": "^7.33.0",
 		"@wdio/local-runner": "^7.33.0",
@@ -23,14 +14,10 @@
 		"eslint-config-wikimedia": "^0.30.0",
 		"eslint-plugin-webdriverio": "^1.0.1",
 		"mwbot": "^2.0.0",
-		"stats-webpack-plugin": "^0.7.0",
 		"wdio-chromedriver-service": "^7.3.2",
-		"webpack-bundle-analyzer": "^4.9.1",
 		"which": "^5.0.0"
 	},
 	"scripts": {
-		"build": "webpack",
-		"analyze": "webpack-bundle-analyzer dist/stats.json",
 		"test": "npm run lint && npm run wdio",
 		"lint": "eslint .",
 		"fix": "eslint --fix .",

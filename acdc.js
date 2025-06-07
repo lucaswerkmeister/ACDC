@@ -1,3 +1,16 @@
+/*
+ * Add to Commons / Descriptive Claims (ACDC)
+ *
+ * Gadget to add a collection of statements to a set of files.
+ *
+ * Documentation: [[Help:Gadget-ACDC]]
+ * (https://commons.wikimedia.org/wiki/Help:Gadget-ACDC)
+ *
+ * This gadget is developed on GitHub;
+ * please avoid changing it directly on Wikimedia Commons if you can:
+ *
+ * https://github.com/lucaswerkmeister/ACDC
+ */
 ( async function ( mw, $ ) {
 	'use strict';
 
