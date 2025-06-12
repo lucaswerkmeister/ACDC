@@ -49,11 +49,17 @@ describe( 'AC/DC', () => {
 				window.mediaWiki.loader.using !== undefined ) );
 	}
 
-	async function injectAcdc() {
+	async function injectAcdc( windowAssignments = {} ) {
 		await mediaWikiLoaded();
-		await browser.execute( () => {
-			window.acdcFavoriteProperties = [];
-		} );
+		await browser.execute( windowAssignments => {
+			delete window.acdcFavoriteProperties;
+			delete window.acdcFavoritePropertiesToAdd;
+			delete window.acdcFavoritePropertiesToRemove;
+			delete window.acdcEnableRemoveFeature;
+			for ( const [ key, value ] of Object.entries( windowAssignments ) ) {
+				window[ key ] = value;
+			}
+		}, windowAssignments );
 		await browser.execute( acdc );
 
 		// now is a good time to install the global error handler, too
@@ -213,6 +219,61 @@ describe( 'AC/DC', () => {
 		} );
 	} );
 
+	describe( 'favorite properties', () => {
+		const wikibaseItemPropertyId = 'P734';
+
+		it( 'registers favorite properties (to add and remove)', async () => {
+			await browser.url( '/wiki/Special:BlankPage?uselang=en&acdcShow=1' );
+			await injectAcdc( {
+				acdcFavoriteProperties: [ wikibaseItemPropertyId ],
+				acdcEnableRemoveFeature: true, // temporary
+			} );
+			await ( await ACDC.dialog ).waitForDisplayed();
+
+			const statementToAddWidget = await ACDC.statementToAddWidget( 1 );
+			await statementToAddWidget.waitForDisplayed();
+
+			const propertyIdToAdd = await statementToAddWidget.propertyId;
+			assert.strictEqual( propertyIdToAdd, wikibaseItemPropertyId );
+
+			const statementToRemoveWidget = await ACDC.statementToRemoveWidget( 1 );
+			await statementToRemoveWidget.waitForDisplayed();
+
+			const propertyIdToRemove = await statementToRemoveWidget.propertyId;
+			assert.strictEqual( propertyIdToRemove, wikibaseItemPropertyId );
+		} );
+
+		it( 'registers favorite properties to add', async () => {
+			await browser.url( '/wiki/Special:BlankPage?uselang=en&acdcShow=1' );
+			await injectAcdc( {
+				acdcFavoritePropertiesToAdd: [ wikibaseItemPropertyId ],
+			} );
+			await ( await ACDC.dialog ).waitForDisplayed();
+
+			const statementToAddWidget = await ACDC.statementToAddWidget( 1 );
+			await statementToAddWidget.waitForDisplayed();
+
+			const propertyIdToAdd = await statementToAddWidget.propertyId;
+			assert.strictEqual( propertyIdToAdd, wikibaseItemPropertyId );
+		} );
+
+		it( 'registers favorite properties to remove', async () => {
+			await browser.url( '/wiki/Special:BlankPage?uselang=en&acdcShow=1' );
+			await injectAcdc( {
+				acdcFavoritePropertiesToRemove: [ wikibaseItemPropertyId ],
+				acdcEnableRemoveFeature: true, // temporary
+			} );
+			await ( await ACDC.dialog ).waitForDisplayed();
+
+			const statementToRemoveWidget = await ACDC.statementToRemoveWidget( 1 );
+			await statementToRemoveWidget.waitForDisplayed();
+
+			const propertyIdToRemove = await statementToRemoveWidget.propertyId;
+			assert.strictEqual( propertyIdToRemove, wikibaseItemPropertyId );
+		} );
+
+	} );
+
 	describe( 'statements', () => {
 		const filePageIds = { // initialized in before() hook
 			'File:ACDC test file 1.pdf': -1,
@@ -242,10 +303,10 @@ describe( 'AC/DC', () => {
 			}
 
 			await browser.url( '/wiki/Special:BlankPage?uselang=en&acdcShow=1' );
-			await browser.execute( () => {
-				window.acdcEnableRemoveFeature = true; // temporary
+			await injectAcdc( {
+				acdcFavoriteProperties: [],
+				acdcEnableRemoveFeature: true, // temporary
 			} );
-			await injectAcdc();
 
 			const error = await browser.executeAsync( async ( username, password, done ) => {
 				const api = new mediaWiki.Api();
