@@ -8,7 +8,7 @@
 			"matches": [
 				"*://commons.wikimedia.org/*",
 				"*://test-commons.wikimedia.org/*",
-				"*://commons.wikimedia.beta.wmflabs.org/*"
+				"*://commons.wikimedia.beta.wmcloud.org/*"
 			],
 			"js": [ "loadAcdc.js" ]
 		}
