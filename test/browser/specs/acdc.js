@@ -74,6 +74,7 @@ describe( 'AC/DC', () => {
 
 		it( 'defines the portlet link and opens the dialog when clicking it', async () => {
 			const portletLink = await ACDC.portletLink;
+			await portletLink.waitForDisplayed( { timeoutMsg: 'expected portlet link to exist' } );
 			assert.strictEqual( await portletLink.getText(), 'AC/DC',
 				'portlet link text should be "AC/DC"' );
 
