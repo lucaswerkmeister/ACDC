@@ -351,7 +351,7 @@ describe( 'AC/DC', () => {
 			// reset entity first
 			const error = await browser.executeAsync( async ( entityId1, entityId2, done ) => {
 				const api = new mediaWiki.Api();
-				const promise1 = api.postWithEditToken( {
+				await api.postWithEditToken( {
 					action: 'wbeditentity',
 					id: entityId1,
 					summary: 'clear for browser test',
@@ -361,7 +361,7 @@ describe( 'AC/DC', () => {
 					done( JSON.stringify( args ) );
 					throw args;
 				} );
-				const promise2 = api.postWithEditToken( {
+				await api.postWithEditToken( {
 					action: 'wbeditentity',
 					id: entityId2,
 					summary: 'clear for browser test',
@@ -371,7 +371,6 @@ describe( 'AC/DC', () => {
 					done( JSON.stringify( args ) );
 					throw args;
 				} );
-				await Promise.all( [ promise1, promise2 ] );
 				done();
 			}, entityId1, entityId2 );
 			if ( error ) {
@@ -495,7 +494,7 @@ describe( 'AC/DC', () => {
 
 			const error = await browser.executeAsync( async ( entityId1, entityId2, propertyId, statementId1, statementId2, value, done ) => {
 				const api = new mediaWiki.Api();
-				const promise1 = api.postWithEditToken( {
+				await api.postWithEditToken( {
 					action: 'wbeditentity',
 					id: entityId1,
 					summary: 'browser test setup',
@@ -515,7 +514,7 @@ describe( 'AC/DC', () => {
 					done( JSON.stringify( args ) );
 					throw args;
 				} );
-				const promise2 = api.postWithEditToken( {
+				await api.postWithEditToken( {
 					action: 'wbeditentity',
 					id: entityId2,
 					summary: 'browser test setup',
@@ -535,7 +534,6 @@ describe( 'AC/DC', () => {
 					done( JSON.stringify( args ) );
 					throw args;
 				} );
-				await Promise.all( [ promise1, promise2 ] );
 				done();
 			}, entityId1, entityId2, propertyId, statementId1, statementId2, value );
 			if ( error ) {
