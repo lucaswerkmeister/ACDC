@@ -4,11 +4,10 @@ const assert = require( 'assert' ),
 	MWBot = require( 'mwbot' ),
 	wdioConf = require( '../../../wdio.conf' ),
 	ACDC = require( '../pageobjects/ACDC' ),
-	MediaWiki = require( '../pageobjects/MediaWiki' );
+	MediaWiki = require( '../pageobjects/MediaWiki' ),
+	{ searchTimeout, submitTimeout } = require( '../timeouts' );
 
 const bot = new MWBot( { apiUrl: `${ wdioConf.config.baseUrl }/w/api.php` } );
-
-const ACDC_SUBMIT_TIMEOUT = 60000;
 
 describe( 'AC/DC', () => {
 	let acdc;
@@ -189,7 +188,7 @@ describe( 'AC/DC', () => {
 		it( 'supports autocompletion', async () => {
 			await ACDC.setFileInputValue( 'File:ACDC test file 1' /* .pdf */ );
 			const menu = await $( '.oo-ui-lookupElement-menu' );
-			await menu.waitForDisplayed( { timeoutMsg: 'expected lookup menu to be opened' } );
+			await menu.waitForDisplayed( { timeout: searchTimeout, timeoutMsg: 'expected lookup menu to be opened' } );
 			await browser.keys( [ 'Enter' ] ); // we don’t do anything special with the menu, Enter should select the first suggestion
 			assert.strictEqual( await ACDC.tagItemText( 1 ), 'File:ACDC test file 1.pdf' );
 		} );
@@ -227,7 +226,7 @@ describe( 'AC/DC', () => {
 				acdcFavoriteProperties: [ wikibaseItemPropertyId1 ],
 				acdcEnableRemoveFeature: true, // temporary
 			} );
-			await ( await ACDC.dialog ).waitForDisplayed( { timeoutMsg: 'expected AC/DC to be opened' } );
+			await ( await ACDC.dialog ).waitForDisplayed( { timeout: searchTimeout, timeoutMsg: 'expected AC/DC to be opened' } );
 
 			const statementToAddWidget = await ACDC.statementToAddWidget( 1 );
 			await statementToAddWidget.waitForDisplayed( { timeoutMsg: 'expected widget for statement to add' } );
@@ -249,7 +248,7 @@ describe( 'AC/DC', () => {
 				acdcFavoritePropertiesToRemove: [ wikibaseItemPropertyId2 ],
 				acdcEnableRemoveFeature: true, // temporary
 			} );
-			await ( await ACDC.dialog ).waitForDisplayed( { timeoutMsg: 'expected AC/DC to be opened' } );
+			await ( await ACDC.dialog ).waitForDisplayed( { timeout: searchTimeout, timeoutMsg: 'expected AC/DC to be opened' } );
 
 			const statementToAddWidget = await ACDC.statementToAddWidget( 1 );
 			await statementToAddWidget.waitForDisplayed( { timeoutMsg: 'expected widget for statement to add' } );
@@ -396,7 +395,7 @@ describe( 'AC/DC', () => {
 			await ACDC.submit();
 
 			// wait until no longer displayed ⇒ done
-			await dialog.waitForDisplayed( { timeout: 2 * ACDC_SUBMIT_TIMEOUT, reverse: true, timeoutMsg: 'expected AC/DC to be closed' } );
+			await dialog.waitForDisplayed( { timeout: 2 * submitTimeout, reverse: true, timeoutMsg: 'expected AC/DC to be closed' } );
 
 			const [ entityData1, entityData2 ] = await browser.executeAsync(
 				async ( entityId1, entityId2, done ) => {
@@ -469,7 +468,7 @@ describe( 'AC/DC', () => {
 			await ACDC.submit();
 
 			// wait until no longer displayed ⇒ done
-			await dialog.waitForDisplayed( { timeout: ACDC_SUBMIT_TIMEOUT, reverse: true, timeoutMsg: 'expected AC/DC to be closed' } );
+			await dialog.waitForDisplayed( { timeout: submitTimeout, reverse: true, timeoutMsg: 'expected AC/DC to be closed' } );
 			const entityData = await browser.executeAsync( async ( entityId, done ) => {
 				const api = new mediaWiki.Api();
 				done( ( await api.get( {
@@ -559,7 +558,7 @@ describe( 'AC/DC', () => {
 			await ACDC.submit();
 
 			// wait until no longer displayed ⇒ done
-			await dialog.waitForDisplayed( { timeout: 2 * ACDC_SUBMIT_TIMEOUT, reverse: true, timeoutMsg: 'expected AC/DC to be closed' } );
+			await dialog.waitForDisplayed( { timeout: 2 * submitTimeout, reverse: true, timeoutMsg: 'expected AC/DC to be closed' } );
 
 			const [ entityData1, entityData2 ] = await browser.executeAsync(
 				async ( entityId1, entityId2, done ) => {
@@ -660,7 +659,7 @@ describe( 'AC/DC', () => {
 			await ACDC.submit();
 
 			// wait until no longer displayed ⇒ done
-			await dialog.waitForDisplayed( { timeout: 3 * ACDC_SUBMIT_TIMEOUT, reverse: true, timeoutMsg: 'expected AC/DC to be closed' } );
+			await dialog.waitForDisplayed( { timeout: 3 * submitTimeout, reverse: true, timeoutMsg: 'expected AC/DC to be closed' } );
 			const entityData = await browser.executeAsync( async ( entityId, done ) => {
 				const api = new mediaWiki.Api();
 				done( ( await api.get( {
@@ -747,7 +746,7 @@ describe( 'AC/DC', () => {
 			await ACDC.submit();
 
 			// wait until no longer displayed ⇒ done
-			await dialog.waitForDisplayed( { timeout: ACDC_SUBMIT_TIMEOUT, reverse: true, timeoutMsg: 'expected AC/DC to be closed' } );
+			await dialog.waitForDisplayed( { timeout: submitTimeout, reverse: true, timeoutMsg: 'expected AC/DC to be closed' } );
 			const entityData = await browser.executeAsync( async ( entityId, done ) => {
 				const api = new mediaWiki.Api();
 				done( ( await api.get( {

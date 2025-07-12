@@ -1,5 +1,6 @@
 const WikibaseMediaInfo = require( './WikibaseMediaInfo' );
 const StatementWidget = require( './StatementWidget' );
+const { searchTimeout } = require( '../timeouts' );
 
 class ACDC {
 
@@ -82,7 +83,7 @@ class ACDC {
 		await addStatementToAddInput.waitForDisplayed( { timeoutMsg: 'expected property input for statement to add' } );
 		await addStatementToAddInput.setValue( propertyId );
 		const propertyEntry = await WikibaseMediaInfo.entitySelectorEntry;
-		await propertyEntry.waitForDisplayed( { timeoutMsg: 'expected selected property entry for statement to add' } );
+		await propertyEntry.waitForDisplayed( { timeout: searchTimeout, timeoutMsg: 'expected selected property entry for statement to add' } );
 		await propertyEntry.click();
 	}
 
@@ -92,7 +93,7 @@ class ACDC {
 		await addStatementToRemoveInput.waitForDisplayed( { timeoutMsg: 'expected property input for statement to remove' } );
 		await addStatementToRemoveInput.setValue( propertyId );
 		const propertyEntry = await WikibaseMediaInfo.entitySelectorEntry;
-		await propertyEntry.waitForDisplayed( { timeoutMsg: 'expected selected property entry for statement to remove' } );
+		await propertyEntry.waitForDisplayed( { timeout: searchTimeout, timeoutMsg: 'expected selected property entry for statement to remove' } );
 		await propertyEntry.click();
 	}
 

@@ -153,9 +153,10 @@ module.exports.config = {
 	mochaOpts: {
 		ui: 'bdd',
 		// some tests have individual action timeouts of up to
-		// 3 * ACDC_SUBMIT_TIMEOUT = 180000 ms,
+		// 5 * searchTimeout + 3 * submitTimeout = 330000 ms
+		// (plus additional default timeouts that are expected to be faster),
 		// so this should be somewhat longer than that for the whole test
-		timeout: 200000,
+		timeout: 350000,
 	},
 	//
 	// =====

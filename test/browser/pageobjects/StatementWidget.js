@@ -1,4 +1,5 @@
 const WikibaseMediaInfo = require( './WikibaseMediaInfo' );
+const { searchTimeout } = require( '../timeouts' );
 
 class StatementWidget {
 
@@ -42,7 +43,7 @@ class StatementWidget {
 		const numberOfValues = await this.numberOfValues;
 		await ( await this.valueInput ).setValue( itemId );
 		const itemEntry = await WikibaseMediaInfo.entitySelectorEntry;
-		await itemEntry.waitForDisplayed( { timeoutMsg: 'expected selected item entry for statement' } );
+		await itemEntry.waitForDisplayed( { timeout: searchTimeout, timeoutMsg: 'expected selected item entry for statement' } );
 		await itemEntry.click();
 		await browser.waitUntil( async () => await this.numberOfValues === numberOfValues + 1 );
 	}
