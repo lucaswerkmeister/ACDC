@@ -34,15 +34,15 @@ class StatementWidget {
 			.then( values => values.length );
 	}
 
-	async waitForDisplayed() {
-		await ( await this.element ).waitForDisplayed();
+	async waitForDisplayed( options = {} ) {
+		await ( await this.element ).waitForDisplayed( options );
 	}
 
 	async addValue( itemId ) {
 		const numberOfValues = await this.numberOfValues;
 		await ( await this.valueInput ).setValue( itemId );
 		const itemEntry = await WikibaseMediaInfo.entitySelectorEntry;
-		await itemEntry.waitForDisplayed();
+		await itemEntry.waitForDisplayed( { timeoutMsg: 'expected selected item entry for statement' } );
 		await itemEntry.click();
 		await browser.waitUntil( async () => await this.numberOfValues === numberOfValues + 1 );
 	}

@@ -79,20 +79,20 @@ class ACDC {
 	async addPropertyToAdd( propertyId ) {
 		await ( await this.addStatementToAddButton ).click();
 		const addStatementToAddInput = await this.addStatementToAddInput;
-		await addStatementToAddInput.waitForDisplayed();
+		await addStatementToAddInput.waitForDisplayed( { timeoutMsg: 'expected property input for statement to add' } );
 		await addStatementToAddInput.setValue( propertyId );
 		const propertyEntry = await WikibaseMediaInfo.entitySelectorEntry;
-		await propertyEntry.waitForDisplayed();
+		await propertyEntry.waitForDisplayed( { timeoutMsg: 'expected selected property entry for statement to add' } );
 		await propertyEntry.click();
 	}
 
 	async addPropertyToRemove( propertyId ) {
 		await ( await this.addStatementToRemoveButton ).click();
 		const addStatementToRemoveInput = await this.addStatementToRemoveInput;
-		await addStatementToRemoveInput.waitForDisplayed();
+		await addStatementToRemoveInput.waitForDisplayed( { timeoutMsg: 'expected property input for statement to remove' } );
 		await addStatementToRemoveInput.setValue( propertyId );
 		const propertyEntry = await WikibaseMediaInfo.entitySelectorEntry;
-		await propertyEntry.waitForDisplayed();
+		await propertyEntry.waitForDisplayed( { timeoutMsg: 'expected selected property entry for statement to remove' } );
 		await propertyEntry.click();
 	}
 

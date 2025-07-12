@@ -73,16 +73,14 @@ describe( 'AC/DC', () => {
 			await MediaWiki.ensureToolsShown();
 		} );
 
-		it( 'defines the portlet link', async () => {
+		it( 'defines the portlet link and opens the dialog when clicking it', async () => {
 			const portletLink = await ACDC.portletLink;
-			assert.strictEqual( await portletLink.getText(), 'AC/DC' );
-		} );
+			assert.strictEqual( await portletLink.getText(), 'AC/DC',
+				'portlet link text should be "AC/DC"' );
 
-		it( 'opens the dialog when clicking the portlet link', async () => {
-			const portletLink = await ACDC.portletLink;
 			await portletLink.click();
 			const dialog = await ACDC.dialog;
-			await dialog.waitForDisplayed();
+			await dialog.waitForDisplayed( { timeoutMsg: 'expected AC/DC to be opened' } );
 		} );
 	} );
 
@@ -92,16 +90,16 @@ describe( 'AC/DC', () => {
 			await injectAcdc();
 		} );
 
-		it( 'defines the portlet link', async () => {
+		it( 'defines the portlet link and has already opened the dialog', async () => {
 			const content = await ACDC.portletLink;
 			// note: if the dialog is already opened, the link is not interactable
 			// and we can’t use getText(), so use getHTML( false ) instead
-			assert.ok( ( await content.getHTML( false ) ).includes( 'AC/DC' ) );
-		} );
+			const html = await content.getHTML( false );
+			assert.ok( html.includes( 'AC/DC' ),
+				`portlet link HTML should include "AC/DC": ${ html }` );
 
-		it( 'opens the dialog', async () => {
 			const dialog = await ACDC.dialog;
-			await dialog.waitForDisplayed();
+			await dialog.waitForDisplayed( { timeoutMsg: 'expected AC/DC to be opened' } );
 		} );
 	} );
 
@@ -110,31 +108,25 @@ describe( 'AC/DC', () => {
 			await browser.url( '/wiki/Special:BlankPage?uselang=en' );
 		} );
 
-		it( 'fires early-registered hook', async () => {
+		it( 'fires early-registered and late-registered hooks', async () => {
 			await mediaWikiLoaded();
 			await browser.execute( () => {
 				mediaWiki.hook( 'gadget.acdc.loaded' ).add( () => {
-					window.acdcLoaded = true;
+					window.earlyHook = true;
 				} );
 			} );
 
-			await injectAcdc();
-
-			await browser.waitUntil( () => browser.execute(
-				() => window.acdcLoaded === true ) );
-		} );
-
-		it( 'fires late-registered hook', async () => {
 			await injectAcdc();
 
 			await browser.execute( () => {
 				mediaWiki.hook( 'gadget.acdc.loaded' ).add( () => {
-					window.acdcLoaded = true;
+					window.lateHook = true;
 				} );
 			} );
 
-			await browser.waitUntil( () => browser.execute(
-				() => window.acdcLoaded === true ) );
+			await browser.waitUntil(
+				() => browser.execute( () => window.earlyHook === true && window.lateHook === true ),
+				{ timeoutMsg: 'expected hook flags to be set' } );
 		} );
 	} );
 
@@ -142,56 +134,62 @@ describe( 'AC/DC', () => {
 		beforeEach( 'open blank page and inject AC/DC code', async () => {
 			await browser.url( '/wiki/Special:BlankPage?uselang=en&acdcShow=1' );
 			await injectAcdc();
-			await ( await ACDC.dialog ).waitForDisplayed();
+			await ( await ACDC.dialog ).waitForDisplayed( { timeoutMsg: 'expected AC/DC to be opened' } );
 		} );
 
-		it( 'supports entering the full file name', async () => {
+		it( 'supports various input formats', async () => {
 			await ACDC.setFileInputValue( 'File:ACDC test file 1.pdf' );
 			await browser.keys( [ 'Enter' ] );
-			assert.strictEqual( await ACDC.tagItemText( 1 ), 'File:ACDC test file 1.pdf' );
-		} );
+			assert.strictEqual( await ACDC.tagItemText( 1 ), 'File:ACDC test file 1.pdf',
+				'entered as full file name:' );
+			await browser.keys( [ 'Backspace' ] );
 
-		it( 'adds missing File: prefix', async () => {
 			await ACDC.setFileInputValue( /* File: */ 'ACDC test file 1.pdf' );
 			await browser.keys( [ 'Enter' ] );
-			assert.strictEqual( await ACDC.tagItemText( 1 ), 'File:ACDC test file 1.pdf' );
-		} );
+			assert.strictEqual( await ACDC.tagItemText( 1 ), 'File:ACDC test file 1.pdf',
+				'entered with missing File: prefix:' );
+			await browser.keys( [ 'Backspace' ] );
 
-		it( 'parses short URL', async () => { // “short” as in [[mw:Manual:Short URL]]
-			const url = await browser.executeAsync( async done => {
-				const relativeUrl = ( new mediaWiki.Title( 'File:ACDC test file 1.pdf' ) ).getUrl();
-				done( mediaWiki.config.get( 'wgServer' ) + relativeUrl );
-			} );
-			await ACDC.setFileInputValue( url );
-			await browser.keys( [ 'Enter' ] );
-			assert.strictEqual( await ACDC.tagItemText( 1 ), 'File:ACDC test file 1.pdf' );
-		} );
-
-		it( 'parses default URL', async () => {
-			const url = await browser.executeAsync( async done => {
-				const relativeUrl = ( new mediaWiki.Title( 'File:ACDC test file 1.pdf' ) )
+			const [
+				shortUrl, // “short” as in [[mw:Manual:Short URL]]
+				defaultUrl,
+				nonAsciiUrl,
+			] = await browser.executeAsync( async done => {
+				const relativeShortUrl = ( new mediaWiki.Title( 'File:ACDC test file 1.pdf' ) ).getUrl();
+				const relativeDefaultUrl = ( new mediaWiki.Title( 'File:ACDC test file 1.pdf' ) )
 					.getUrl( { action: 'view' } );
-				done( mediaWiki.config.get( 'wgServer' ) + relativeUrl );
+				const relativeNonAsciiUrl = ( new mediaWiki.Title( 'File:20000 тугрик.jpg' ) ).getUrl();
+				const wgServer = mediaWiki.config.get( 'wgServer' );
+				done( [
+					wgServer + relativeShortUrl,
+					wgServer + relativeDefaultUrl,
+					wgServer + relativeNonAsciiUrl,
+				] );
 			} );
-			await ACDC.setFileInputValue( url );
-			await browser.keys( [ 'Enter' ] );
-			assert.strictEqual( await ACDC.tagItemText( 1 ), 'File:ACDC test file 1.pdf' );
-		} );
 
-		it( 'parses non-ASCII URL', async () => {
-			const url = await browser.executeAsync( async done => {
-				const relativeUrl = ( new mediaWiki.Title( 'File:20000 тугрик.jpg' ) ).getUrl();
-				done( mediaWiki.config.get( 'wgServer' ) + relativeUrl );
-			} );
-			await ACDC.setFileInputValue( url );
+			await ACDC.setFileInputValue( shortUrl );
 			await browser.keys( [ 'Enter' ] );
-			assert.strictEqual( await ACDC.tagItemText( 1 ), 'File:20000 тугрик.jpg' );
+			assert.strictEqual( await ACDC.tagItemText( 1 ), 'File:ACDC test file 1.pdf',
+				'entered as short URL:' );
+			await browser.keys( [ 'Backspace' ] );
+
+			await ACDC.setFileInputValue( defaultUrl );
+			await browser.keys( [ 'Enter' ] );
+			assert.strictEqual( await ACDC.tagItemText( 1 ), 'File:ACDC test file 1.pdf',
+				'entered as default URL:' );
+			await browser.keys( [ 'Backspace' ] );
+
+			await ACDC.setFileInputValue( nonAsciiUrl );
+			await browser.keys( [ 'Enter' ] );
+			assert.strictEqual( await ACDC.tagItemText( 1 ), 'File:20000 тугрик.jpg',
+				'entered as non-ASCII URL:' );
+			await browser.keys( [ 'Backspace' ] );
 		} );
 
 		it( 'supports autocompletion', async () => {
 			await ACDC.setFileInputValue( 'File:ACDC test file 1' /* .pdf */ );
 			const menu = await $( '.oo-ui-lookupElement-menu' );
-			await menu.waitForDisplayed();
+			await menu.waitForDisplayed( { timeoutMsg: 'expected lookup menu to be opened' } );
 			await browser.keys( [ 'Enter' ] ); // we don’t do anything special with the menu, Enter should select the first suggestion
 			assert.strictEqual( await ACDC.tagItemText( 1 ), 'File:ACDC test file 1.pdf' );
 		} );
@@ -220,56 +218,50 @@ describe( 'AC/DC', () => {
 	} );
 
 	describe( 'favorite properties', () => {
-		const wikibaseItemPropertyId = 'P734';
+		const wikibaseItemPropertyId1 = 'P734';
+		const wikibaseItemPropertyId2 = 'P116'; // NOTE: not an Item property on Wikidata
 
 		it( 'registers favorite properties (to add and remove)', async () => {
 			await browser.url( '/wiki/Special:BlankPage?uselang=en&acdcShow=1' );
 			await injectAcdc( {
-				acdcFavoriteProperties: [ wikibaseItemPropertyId ],
+				acdcFavoriteProperties: [ wikibaseItemPropertyId1 ],
 				acdcEnableRemoveFeature: true, // temporary
 			} );
-			await ( await ACDC.dialog ).waitForDisplayed();
+			await ( await ACDC.dialog ).waitForDisplayed( { timeoutMsg: 'expected AC/DC to be opened' } );
 
 			const statementToAddWidget = await ACDC.statementToAddWidget( 1 );
-			await statementToAddWidget.waitForDisplayed();
+			await statementToAddWidget.waitForDisplayed( { timeoutMsg: 'expected widget for statement to add' } );
 
 			const propertyIdToAdd = await statementToAddWidget.propertyId;
-			assert.strictEqual( propertyIdToAdd, wikibaseItemPropertyId );
+			assert.strictEqual( propertyIdToAdd, wikibaseItemPropertyId1 );
 
 			const statementToRemoveWidget = await ACDC.statementToRemoveWidget( 1 );
-			await statementToRemoveWidget.waitForDisplayed();
+			await statementToRemoveWidget.waitForDisplayed( { timeoutMsg: 'expected widget for statement to remove' } );
 
 			const propertyIdToRemove = await statementToRemoveWidget.propertyId;
-			assert.strictEqual( propertyIdToRemove, wikibaseItemPropertyId );
+			assert.strictEqual( propertyIdToRemove, wikibaseItemPropertyId1 );
 		} );
 
-		it( 'registers favorite properties to add', async () => {
+		it( 'registers favorite properties to add and to remove (separately)', async () => {
 			await browser.url( '/wiki/Special:BlankPage?uselang=en&acdcShow=1' );
 			await injectAcdc( {
-				acdcFavoritePropertiesToAdd: [ wikibaseItemPropertyId ],
-			} );
-			await ( await ACDC.dialog ).waitForDisplayed();
-
-			const statementToAddWidget = await ACDC.statementToAddWidget( 1 );
-			await statementToAddWidget.waitForDisplayed();
-
-			const propertyIdToAdd = await statementToAddWidget.propertyId;
-			assert.strictEqual( propertyIdToAdd, wikibaseItemPropertyId );
-		} );
-
-		it( 'registers favorite properties to remove', async () => {
-			await browser.url( '/wiki/Special:BlankPage?uselang=en&acdcShow=1' );
-			await injectAcdc( {
-				acdcFavoritePropertiesToRemove: [ wikibaseItemPropertyId ],
+				acdcFavoritePropertiesToAdd: [ wikibaseItemPropertyId1 ],
+				acdcFavoritePropertiesToRemove: [ wikibaseItemPropertyId2 ],
 				acdcEnableRemoveFeature: true, // temporary
 			} );
-			await ( await ACDC.dialog ).waitForDisplayed();
+			await ( await ACDC.dialog ).waitForDisplayed( { timeoutMsg: 'expected AC/DC to be opened' } );
+
+			const statementToAddWidget = await ACDC.statementToAddWidget( 1 );
+			await statementToAddWidget.waitForDisplayed( { timeoutMsg: 'expected widget for statement to add' } );
+
+			const propertyIdToAdd = await statementToAddWidget.propertyId;
+			assert.strictEqual( propertyIdToAdd, wikibaseItemPropertyId1 );
 
 			const statementToRemoveWidget = await ACDC.statementToRemoveWidget( 1 );
-			await statementToRemoveWidget.waitForDisplayed();
+			await statementToRemoveWidget.waitForDisplayed( { timeoutMsg: 'expected widget for statement to remove' } );
 
 			const propertyIdToRemove = await statementToRemoveWidget.propertyId;
-			assert.strictEqual( propertyIdToRemove, wikibaseItemPropertyId );
+			assert.strictEqual( propertyIdToRemove, wikibaseItemPropertyId2 );
 		} );
 
 	} );
@@ -349,60 +341,6 @@ describe( 'AC/DC', () => {
 			}
 		} );
 
-		it( 'can add a single statement', async () => {
-			const file = 'File:ACDC test file 1.pdf';
-			const entityId = `M${ filePageIds[ file ] }`;
-			const propertyId = wikibaseItemPropertyId1;
-			const value = itemId1;
-			// reset entity first
-			const error = await browser.executeAsync( async ( entityId, done ) => {
-				const api = new mediaWiki.Api();
-				await api.postWithEditToken( {
-					action: 'wbeditentity',
-					id: entityId,
-					summary: 'clear for browser test',
-					data: JSON.stringify( { labels: { en: { value: 'test file for the AC/DC gadget', language: 'en' } } } ),
-					clear: true,
-				} ).catch( ( ...args ) => {
-					done( JSON.stringify( args ) );
-					throw args;
-				} );
-				done();
-			}, entityId );
-			if ( error ) {
-				throw new Error( error );
-			}
-
-			const dialog = await ACDC.dialog;
-			await dialog.waitForDisplayed();
-
-			await ACDC.setFileInputValue( file );
-			await browser.keys( [ 'Enter' ] );
-
-			await ACDC.addPropertyToAdd( propertyId );
-
-			const statementToAddWidget = await ACDC.statementToAddWidget( 1 );
-			await statementToAddWidget.waitForDisplayed();
-
-			await statementToAddWidget.addValue( value );
-
-			await ACDC.submit();
-
-			// wait until no longer displayed ⇒ done
-			await dialog.waitForDisplayed( { timeout: ACDC_SUBMIT_TIMEOUT, reverse: true } );
-			const entityData = await browser.executeAsync( async ( entityId, done ) => {
-				const api = new mediaWiki.Api();
-				done( ( await api.get( {
-					action: 'wbgetentities',
-					ids: entityId,
-				} ) ).entities[ entityId ] );
-			}, entityId );
-
-			assert.strictEqual(
-				entityData.statements[ propertyId ][ 0 ].mainsnak.datavalue.value.id,
-				value );
-		} );
-
 		it( 'can add a single statement to two files', async () => {
 			const file1 = 'File:ACDC test file 1.pdf';
 			const file2 = 'File:ACDC test file 2.pdf';
@@ -441,7 +379,7 @@ describe( 'AC/DC', () => {
 			}
 
 			const dialog = await ACDC.dialog;
-			await dialog.waitForDisplayed();
+			await dialog.waitForDisplayed( { timeoutMsg: 'expected AC/DC to be opened' } );
 
 			await ACDC.setFileInputValue( file1 );
 			await browser.keys( [ 'Enter' ] );
@@ -452,14 +390,14 @@ describe( 'AC/DC', () => {
 			await ACDC.addPropertyToAdd( propertyId );
 
 			const statementToAddWidget = await ACDC.statementToAddWidget( 1 );
-			await statementToAddWidget.waitForDisplayed();
+			await statementToAddWidget.waitForDisplayed( { timeoutMsg: 'expected widget for statement to add' } );
 
 			await statementToAddWidget.addValue( value );
 
 			await ACDC.submit();
 
 			// wait until no longer displayed ⇒ done
-			await dialog.waitForDisplayed( { timeout: 2 * ACDC_SUBMIT_TIMEOUT, reverse: true } );
+			await dialog.waitForDisplayed( { timeout: 2 * ACDC_SUBMIT_TIMEOUT, reverse: true, timeoutMsg: 'expected AC/DC to be closed' } );
 
 			const [ entityData1, entityData2 ] = await browser.executeAsync(
 				async ( entityId1, entityId2, done ) => {
@@ -517,7 +455,7 @@ describe( 'AC/DC', () => {
 			}
 
 			const dialog = await ACDC.dialog;
-			await dialog.waitForDisplayed();
+			await dialog.waitForDisplayed( { timeoutMsg: 'expected AC/DC to be opened' } );
 
 			await ACDC.setFileInputValue( file );
 			await browser.keys( [ 'Enter' ] );
@@ -525,14 +463,14 @@ describe( 'AC/DC', () => {
 			await ACDC.addPropertyToAdd( propertyId );
 
 			const statementToAddWidget = await ACDC.statementToAddWidget( 1 );
-			await statementToAddWidget.waitForDisplayed();
+			await statementToAddWidget.waitForDisplayed( { timeoutMsg: 'expected widget for statement to add' } );
 
 			await statementToAddWidget.addValue( value );
 
 			await ACDC.submit();
 
 			// wait until no longer displayed ⇒ done
-			await dialog.waitForDisplayed( { timeout: ACDC_SUBMIT_TIMEOUT, reverse: true } );
+			await dialog.waitForDisplayed( { timeout: ACDC_SUBMIT_TIMEOUT, reverse: true, timeoutMsg: 'expected AC/DC to be closed' } );
 			const entityData = await browser.executeAsync( async ( entityId, done ) => {
 				const api = new mediaWiki.Api();
 				done( ( await api.get( {
@@ -543,69 +481,6 @@ describe( 'AC/DC', () => {
 
 			assert.strictEqual( entityData.statements[ propertyId ].length, 1 );
 			assert.strictEqual( entityData.statements[ propertyId ][ 0 ].id, statementId );
-		} );
-
-		it( 'can remove a single statement', async () => {
-			const file = 'File:ACDC test file 1.pdf';
-			const entityId = `M${ filePageIds[ file ] }`;
-			const propertyId = wikibaseItemPropertyId1;
-			const statementId = `${ entityId }$e7a7a919-e727-49d3-bfe3-2bc6e1eb5fc7`;
-			const value = itemId1;
-
-			const error = await browser.executeAsync( async ( entityId, propertyId, statementId, value, done ) => {
-				const api = new mediaWiki.Api();
-				await api.postWithEditToken( {
-					action: 'wbeditentity',
-					id: entityId,
-					summary: 'browser test setup',
-					data: JSON.stringify( {
-						labels: { en: { value: 'test file for the AC/DC gadget', language: 'en' } },
-						claims: { [ propertyId ]: [ {
-							type: 'statement',
-							id: statementId,
-							mainsnak: { snaktype: 'value', property: propertyId, datavalue: {
-								type: 'wikibase-entityid',
-								value: { 'entity-type': 'item', id: value },
-							} },
-						} ] },
-					} ),
-					clear: true,
-				} ).catch( ( ...args ) => {
-					done( JSON.stringify( args ) );
-					throw args;
-				} );
-				done();
-			}, entityId, propertyId, statementId, value );
-			if ( error ) {
-				throw new Error( error );
-			}
-
-			const dialog = await ACDC.dialog;
-			await dialog.waitForDisplayed();
-
-			await ACDC.setFileInputValue( file );
-			await browser.keys( [ 'Enter' ] );
-
-			await ACDC.addPropertyToRemove( propertyId );
-
-			const statementToRemoveWidget = await ACDC.statementToRemoveWidget( 1 );
-			await statementToRemoveWidget.waitForDisplayed();
-
-			await statementToRemoveWidget.addValue( value );
-
-			await ACDC.submit();
-
-			// wait until no longer displayed ⇒ done
-			await dialog.waitForDisplayed( { timeout: ACDC_SUBMIT_TIMEOUT, reverse: true } );
-			const entityData = await browser.executeAsync( async ( entityId, done ) => {
-				const api = new mediaWiki.Api();
-				done( ( await api.get( {
-					action: 'wbgetentities',
-					ids: entityId,
-				} ) ).entities[ entityId ] );
-			}, entityId );
-
-			assert.deepStrictEqual( entityData.statements, [] ); // should be {} but see T222159
 		} );
 
 		it( 'can remove a single statement from two files', async () => {
@@ -668,7 +543,7 @@ describe( 'AC/DC', () => {
 			}
 
 			const dialog = await ACDC.dialog;
-			await dialog.waitForDisplayed();
+			await dialog.waitForDisplayed( { timeoutMsg: 'expected AC/DC to be opened' } );
 
 			await ACDC.setFileInputValue( file1 );
 			await browser.keys( [ 'Enter' ] );
@@ -679,14 +554,14 @@ describe( 'AC/DC', () => {
 			await ACDC.addPropertyToRemove( propertyId );
 
 			const statementToRemoveWidget = await ACDC.statementToRemoveWidget( 1 );
-			await statementToRemoveWidget.waitForDisplayed();
+			await statementToRemoveWidget.waitForDisplayed( { timeoutMsg: 'expected widget for statement to remove' } );
 
 			await statementToRemoveWidget.addValue( value );
 
 			await ACDC.submit();
 
 			// wait until no longer displayed ⇒ done
-			await dialog.waitForDisplayed( { timeout: 2 * ACDC_SUBMIT_TIMEOUT, reverse: true } );
+			await dialog.waitForDisplayed( { timeout: 2 * ACDC_SUBMIT_TIMEOUT, reverse: true, timeoutMsg: 'expected AC/DC to be closed' } );
 
 			const [ entityData1, entityData2 ] = await browser.executeAsync(
 				async ( entityId1, entityId2, done ) => {
@@ -764,7 +639,7 @@ describe( 'AC/DC', () => {
 			}
 
 			const dialog = await ACDC.dialog;
-			await dialog.waitForDisplayed();
+			await dialog.waitForDisplayed( { timeoutMsg: 'expected AC/DC to be opened' } );
 
 			await ACDC.setFileInputValue( file );
 			await browser.keys( [ 'Enter' ] );
@@ -772,7 +647,7 @@ describe( 'AC/DC', () => {
 			await ACDC.addPropertyToRemove( propertyId1 );
 
 			const statementToRemoveWidget1 = await ACDC.statementToRemoveWidget( 1 );
-			await statementToRemoveWidget1.waitForDisplayed();
+			await statementToRemoveWidget1.waitForDisplayed( { timeoutMsg: 'expected widget for first statement to remove' } );
 
 			await statementToRemoveWidget1.addValue( value1 );
 			await statementToRemoveWidget1.addValue( value2 );
@@ -780,14 +655,14 @@ describe( 'AC/DC', () => {
 			await ACDC.addPropertyToRemove( propertyId2 );
 
 			const statementToRemoveWidget2 = await ACDC.statementToRemoveWidget( 2 );
-			await statementToRemoveWidget2.waitForDisplayed();
+			await statementToRemoveWidget2.waitForDisplayed( { timeoutMsg: 'expected widget for second statement to remove' } );
 
 			await statementToRemoveWidget2.addValue( value1 );
 
 			await ACDC.submit();
 
 			// wait until no longer displayed ⇒ done
-			await dialog.waitForDisplayed( { timeout: 3 * ACDC_SUBMIT_TIMEOUT, reverse: true } );
+			await dialog.waitForDisplayed( { timeout: 3 * ACDC_SUBMIT_TIMEOUT, reverse: true, timeoutMsg: 'expected AC/DC to be closed' } );
 			const entityData = await browser.executeAsync( async ( entityId, done ) => {
 				const api = new mediaWiki.Api();
 				done( ( await api.get( {
@@ -859,7 +734,7 @@ describe( 'AC/DC', () => {
 			}
 
 			const dialog = await ACDC.dialog;
-			await dialog.waitForDisplayed();
+			await dialog.waitForDisplayed( { timeoutMsg: 'expected AC/DC to be opened' } );
 
 			await ACDC.setFileInputValue( file );
 			await browser.keys( [ 'Enter' ] );
@@ -867,14 +742,14 @@ describe( 'AC/DC', () => {
 			await ACDC.addPropertyToRemove( propertyId1 );
 
 			const statementToRemoveWidget = await ACDC.statementToRemoveWidget( 1 );
-			await statementToRemoveWidget.waitForDisplayed();
+			await statementToRemoveWidget.waitForDisplayed( { timeoutMsg: 'expected widget for statement to remove' } );
 
 			await statementToRemoveWidget.addValue( value1 );
 
 			await ACDC.submit();
 
 			// wait until no longer displayed ⇒ done
-			await dialog.waitForDisplayed( { timeout: ACDC_SUBMIT_TIMEOUT, reverse: true } );
+			await dialog.waitForDisplayed( { timeout: ACDC_SUBMIT_TIMEOUT, reverse: true, timeoutMsg: 'expected AC/DC to be closed' } );
 			const entityData = await browser.executeAsync( async ( entityId, done ) => {
 				const api = new mediaWiki.Api();
 				done( ( await api.get( {
