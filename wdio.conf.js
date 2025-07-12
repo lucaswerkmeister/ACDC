@@ -73,7 +73,9 @@ module.exports.config = {
 		//
 		browserName: 'chrome',
 		'goog:chromeOptions': {
-			args: process.env.CI ? [ 'headless', 'disable-gpu' ] : [],
+			args: ( process.env.CI ? [ 'headless', 'disable-gpu' ] : [] ).concat( [
+				'user-agent=AC/DC browser tests (https://github.com/lucaswerkmeister/ACDC/)',
+			] ),
 			binary: whichChrome,
 		},
 		// If outputDir is provided WebdriverIO can capture driver session logs
