@@ -22,6 +22,11 @@ module.exports = {
 		'max-len': 'off',
 		'no-irregular-whitespace': [ 'error', { skipStrings: true, skipComments: true } ],
 		'no-promise-executor-return': 'off', // eslint/eslint#13668
+		'jsdoc/no-undefined-types': [ 'error', { definedTypes: [
+			'StatementsDialog',
+			'StatementWidget',
+			'WindowInstance',
+		] } ],
 	},
 	overrides: [
 		{

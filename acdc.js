@@ -777,6 +777,7 @@ body.acdc-active .uls-menu {
 			modes: [ 'save' ],
 		},
 	];
+	StatementsDialog.prototype.initialized = false;
 	StatementsDialog.prototype.initialize = function () {
 		StatementsDialog.super.prototype.initialize.call( this );
 		installStyles();
@@ -887,17 +888,29 @@ body.acdc-active .uls-menu {
 		this.statementWithReferencesToRemoveError.toggle( false ); // see updateShowStatementWithReferencesToRemoveError
 		this.$foot.append( this.statementWithReferencesToRemoveError.$element );
 
-		propertyDatatypes( Array.from( new Set( [ ...favoritePropertiesToAdd, ...favoritePropertiesToRemove ] ) ) ).then( datatypes => {
-			for ( const favoritePropertyToAdd of favoritePropertiesToAdd ) {
-				this.addStatementToAddWidget( favoritePropertyToAdd, datatypes[ favoritePropertyToAdd ] );
-			}
-			for ( const favoritePropertyToRemove of favoritePropertiesToRemove ) {
-				this.addStatementToRemoveWidget( favoritePropertyToRemove, datatypes[ favoritePropertyToRemove ] );
-			}
-		} );
+		const asyncInitializePromises = [];
 
-		this.filesWidget.loadCatALot().catch( () => {
-			// ignore any error (Cat-a-lot not loaded, not active, changed its API…)
+		asyncInitializePromises.push(
+			propertyDatatypes( Array.from( new Set( [ ...favoritePropertiesToAdd, ...favoritePropertiesToRemove ] ) ) )
+				.then( datatypes => {
+					for ( const favoritePropertyToAdd of favoritePropertiesToAdd ) {
+						this.addStatementToAddWidget( favoritePropertyToAdd, datatypes[ favoritePropertyToAdd ] );
+					}
+					for ( const favoritePropertyToRemove of favoritePropertiesToRemove ) {
+						this.addStatementToRemoveWidget( favoritePropertyToRemove, datatypes[ favoritePropertyToRemove ] );
+					}
+				} ),
+		);
+
+		asyncInitializePromises.push(
+			this.filesWidget.loadCatALot().catch( () => {
+				// ignore any error (Cat-a-lot not loaded, not active, changed its API…)
+			} ),
+		);
+
+		Promise.all( asyncInitializePromises ).then( () => {
+			this.initialized = true;
+			this.emit( 'initialized' );
 		} );
 	};
 	StatementsDialog.prototype.getSetupProcess = function ( data ) {
@@ -948,10 +961,24 @@ body.acdc-active .uls-menu {
 				return StatementsDialog.super.prototype.getActionProcess.call( this, action );
 		}
 	};
-	StatementsDialog.prototype.addStatementToAddWidget = function ( id, datatype ) {
-		const statementToAddWidget = new StatementWidget( {
+	/**
+	 * Add a StatementWidget for statements to add.
+	 * If a widget for this property already exists, return that and don’t add another one.
+	 *
+	 * @param {string} propertyId The property ID for statements to add (e.g. "P180").
+	 * @param {string} datatype The data type ID of this property (e.g. "wikibase-item").
+	 * @return {StatementWidget}
+	 */
+	StatementsDialog.prototype.addStatementToAddWidget = function ( propertyId, datatype ) {
+		let statementToAddWidget = this.statementToAddWidgets
+			.find( statementWidget => statementWidget.state.propertyId === propertyId );
+		if ( statementToAddWidget ) {
+			return statementToAddWidget;
+		}
+
+		statementToAddWidget = new StatementWidget( {
 			entityId: '', // this widget is reused for multiple entities, we inject the entity IDs on publish
-			propertyId: id,
+			propertyId,
 			isDefaultProperty: false,
 			propertyType: datatype,
 			$overlay: this.$overlay,
@@ -962,7 +989,7 @@ body.acdc-active .uls-menu {
 		statementToAddWidget.connect( this, { change: 'updateSize' } );
 		statementToAddWidget.on( 'change', () => {
 			// check if there are any duplicate statements for this property
-			this.hasDuplicateStatementsToAddPerProperty[ id ] = false;
+			this.hasDuplicateStatementsToAddPerProperty[ propertyId ] = false;
 			const itemWidgets = statementToAddWidget.getItems();
 
 			for ( const itemWidget of itemWidgets ) {
@@ -975,7 +1002,7 @@ body.acdc-active .uls-menu {
 				for ( let j = i + 1; j < itemWidgets.length; j++ ) {
 					const itemWidget2 = itemWidgets[ j ];
 					if ( itemWidget1.getData().getClaim().getMainSnak().equals( itemWidget2.getData().getClaim().getMainSnak() ) ) {
-						this.hasDuplicateStatementsToAddPerProperty[ id ] = true;
+						this.hasDuplicateStatementsToAddPerProperty[ propertyId ] = true;
 						itemWidget1.$element.addClass( 'acdc-statementsDialog__statementWidget--duplicate-statement' );
 						itemWidget2.$element.addClass( 'acdc-statementsDialog__statementWidget--duplicate-statement' );
 					}
@@ -988,11 +1015,26 @@ body.acdc-active .uls-menu {
 		this.statementToAddWidgets.push( statementToAddWidget );
 
 		statementToAddWidget.$element.insertBefore( this.addPropertyToAddWidget.$element );
+		return statementToAddWidget;
 	};
-	StatementsDialog.prototype.addStatementToRemoveWidget = function ( id, datatype ) {
-		const statementToRemoveWidget = new StatementWidget( {
+	/**
+	 * Add a StatementWidget for statements to remove.
+	 * If a widget for this property already exists, return that and don’t add another one.
+	 *
+	 * @param {string} propertyId The property ID for statements to remove (e.g. "P180").
+	 * @param {string} datatype The data type ID of this property (e.g. "wikibase-item").
+	 * @return {StatementWidget}
+	 */
+	StatementsDialog.prototype.addStatementToRemoveWidget = function ( propertyId, datatype ) {
+		let statementToRemoveWidget = this.statementToRemoveWidgets
+			.find( statementWidget => statementWidget.state.propertyId === propertyId );
+		if ( statementToRemoveWidget ) {
+			return statementToRemoveWidget;
+		}
+
+		statementToRemoveWidget = new StatementWidget( {
 			entityId: '', // this widget is reused for multiple entities, we inject the entity IDs on publish
-			propertyId: id,
+			propertyId,
 			isDefaultProperty: false,
 			propertyType: datatype,
 			$overlay: this.$overlay,
@@ -1003,9 +1045,9 @@ body.acdc-active .uls-menu {
 		statementToRemoveWidget.connect( this, { change: 'updateSize' } );
 		statementToRemoveWidget.on( 'change', () => {
 			// check if there are any duplicate statements or statements with qualifiers for this property
-			this.hasDuplicateStatementsToRemovePerProperty[ id ] = false;
-			this.hasStatementWithQualifiersToRemovePerProperty[ id ] = false;
-			this.hasStatementWithReferencesToRemovePerProperty[ id ] = false;
+			this.hasDuplicateStatementsToRemovePerProperty[ propertyId ] = false;
+			this.hasStatementWithQualifiersToRemovePerProperty[ propertyId ] = false;
+			this.hasStatementWithReferencesToRemovePerProperty[ propertyId ] = false;
 			const itemWidgets = statementToRemoveWidget.getItems();
 
 			for ( const itemWidget of itemWidgets ) {
@@ -1020,7 +1062,7 @@ body.acdc-active .uls-menu {
 				for ( let j = i + 1; j < itemWidgets.length; j++ ) {
 					const itemWidget2 = itemWidgets[ j ];
 					if ( itemWidget1.getData().getClaim().getMainSnak().equals( itemWidget2.getData().getClaim().getMainSnak() ) ) {
-						this.hasDuplicateStatementsToRemovePerProperty[ id ] = true;
+						this.hasDuplicateStatementsToRemovePerProperty[ propertyId ] = true;
 						itemWidget1.$element.addClass( 'acdc-statementsDialog__statementWidget--duplicate-statement' );
 						itemWidget2.$element.addClass( 'acdc-statementsDialog__statementWidget--duplicate-statement' );
 					}
@@ -1029,11 +1071,11 @@ body.acdc-active .uls-menu {
 
 			for ( const itemWidget of itemWidgets ) {
 				if ( !itemWidget.getData().getClaim().getQualifiers().isEmpty() ) {
-					this.hasStatementWithQualifiersToRemovePerProperty[ id ] = true;
+					this.hasStatementWithQualifiersToRemovePerProperty[ propertyId ] = true;
 					itemWidget.$element.addClass( 'acdc-statementsDialog__statementWidget--statement-with-qualifiers-to-remove' );
 				}
 				if ( !itemWidget.getData().getReferences().isEmpty() ) {
-					this.hasStatementWithReferencesToRemovePerProperty[ id ] = true;
+					this.hasStatementWithReferencesToRemovePerProperty[ propertyId ] = true;
 					itemWidget.$element.addClass( 'acdc-statementsDialog__statementWidget--statement-with-references-to-remove' );
 				}
 			}
@@ -1046,6 +1088,7 @@ body.acdc-active .uls-menu {
 		this.statementToRemoveWidgets.push( statementToRemoveWidget );
 
 		statementToRemoveWidget.$element.insertBefore( this.addPropertyToRemoveWidget.$element );
+		return statementToRemoveWidget;
 	};
 	StatementsDialog.prototype.onActionClick = function ( action ) {
 		if ( !this.isPending() || action.getAction() === 'stop' ) {
@@ -1300,26 +1343,128 @@ body.acdc-active .uls-menu {
 	// likewise for the default overlay (and we even want that after/above the default window manager)
 	OO.ui.getDefaultOverlay().insertAfter( OO.ui.getWindowManager().$element );
 
+	const exports = {
+		/**
+		 * Open AC/DC. Returns (asynchronously) an object containing
+		 * the StatementsDialog, where you can access further members or call methods,
+		 * and the {@link https://doc.wikimedia.org/oojs-ui/master/js/OO.ui.WindowInstance.html WindowInstance}
+		 * for this window opening lifecycle.
+		 *
+		 * If you want to change the properties that will be shown initially,
+		 * set acdcFavoriteProperties, acdcFavoritePropertiesToAdd and/or
+		 * acdcFavoritePropertiesToRemove (and acdcEnableRemoveFeature if applicable)
+		 * before calling this function.
+		 *
+		 * Note that part of the initialization is of the StatementsDialog is itself asynchronous;
+		 * you can check its `initialized` property to see if it has completed,
+		 * and add a listener to the `initialized` event to be notified otherwise.
+		 * (Note that OOJS event handlers, unlike mw.hook handlers,
+		 * are not called if they are added after the event was fired:
+		 * adding an `initialized` handler to an already-`initialized` dialog will do nothing.)
+		 * Alternatively, use the gadget.acdc.opened hook.
+		 *
+		 * @return {Promise<{ statementsDialog: StatementsDialog, windowInstance: WindowInstance }>}
+		 */
+		async openAcdc() {
+			const windowInstance = windowManager.openWindow( 'statements', { tags } );
+			const statementsDialog = await windowManager.getWindow( 'statements' );
+			windowInstance.opened.then( () => {
+				if ( statementsDialog.initialized ) {
+					/**
+					 * This hook is fired once AC/DC has finished opening,
+					 * including the asynchronous initialization of the StatementsDialog.
+					 * At this point, you can interact with it, its properties and its widgets
+					 * through normal OOJS/OOUI means,
+					 * and hope that nothing will break too badly.
+					 *
+					 * Example usage:
+					 *
+					 * ```
+					 * mw.hook( 'gadget.acdc.opened' ).add( async ( { statementsDialog } ) => {
+					 *     const { Claim, EntityId, PropertyValueSnak, Statement, StatementList } = require( 'wikibase.datamodel' );
+					 *     const statementWidget = statementsDialog.addStatementToAddWidget( 'P180', 'wikibase-item' ); // "depicts"
+					 *     await statementWidget.setData( new StatementList( [
+					 *         new Statement( new Claim( new PropertyValueSnak(
+					 *             statementWidget.state.propertyId,
+					 *             new EntityId( 'Q4115189' ),
+					 *         ) ) ),
+					 *     ] ) );
+					 *     statementWidget.setEditing( true );
+					 * } );
+					 * ```
+					 */
+					mw.hook( 'gadget.acdc.opened' ).fire( { statementsDialog } );
+				} else {
+					statementsDialog.on( 'initialized', () => {
+						/* see above */
+						mw.hook( 'gadget.acdc.opened' ).fire( { statementsDialog } );
+					} );
+				}
+			} );
+			return { statementsDialog, windowInstance };
+		},
+	};
+
 	const portletLink = mw.util.addPortletLink( 'p-tb', '', 'AC/DC', 't-acdc' ),
 		$portletLink = $( portletLink );
 	$portletLink.on( 'click', () => {
-		try {
-			windowManager.openWindow( 'statements', { tags } );
-		} catch ( e ) {
+		exports.openAcdc().catch( e => {
 			OO.ui.alert( String( e ) );
-		}
+		} );
 		return false;
 	} );
 
 	const startup = mw.util.getParamValue( 'acdcShow' ),
 		startupPagePileId = mw.util.getParamValue( 'acdcPagePileId' );
 	if ( startup || startupPagePileId ) {
-		windowManager.openWindow( 'statements', { tags } );
-		const statementsDialog = await windowManager.getWindow( 'statements' );
+		const statementsDialog = await exports.openAcdc();
 		if ( startupPagePileId ) {
 			await statementsDialog.filesWidget.loadPagePile( startupPagePileId );
 		}
 	}
 
-	mw.hook( 'gadget.acdc.loaded' ).fire();
+	/*
+	 * Note: almost nobody should use module.exports or acdcExports.
+	 * We only assign them after awaiting several asynchronous actions,
+	 * including at least one network request (loading the translations).
+	 * The best way to know when the exports will be available is to use the gadget.acdc.loaded hook (below),
+	 * but the hook is also called with the exports, so you may as well get them from there.
+	 *
+	 * If you know what you’re doing, and you want to use these exports anyway:
+	 * if AC/DC has been installed on the wiki as a gadget,
+	 * using the "package" option in the gadget definition,
+	 * then the exports are available via `require( 'ext.gadget.ACDC' )`
+	 * (or `mw.loader.require( 'ext.gadget.ACDC' )` if you’re not in a context with a `require` function);
+	 * otherwise, assign `window.acdcExports = {}` before loading AC/DC,
+	 * and the exports will be added to that object.
+	 */
+	/* eslint-disable no-undef */
+	if ( typeof module === 'object' && typeof module.exports === 'object' ) {
+		Object.assign( module.exports, exports );
+	}
+	if ( typeof acdcExports === 'object' ) {
+		Object.assign( acdcExports, exports );
+	}
+	/* eslint-enable */
+
+	/**
+	 * This hook is fired once AC/DC has finished loading.
+	 * At this point, the portlet link has been added,
+	 * and it’s possible to open AC/DC.
+	 * The hook is called with an “exports” object whose members may be useful;
+	 * see above for the documentation of those.
+	 *
+	 * Example usage:
+	 *
+	 * ```
+	 * mw.hook( 'gadget.acdc.loaded' ).add( async ( acdcExports ) => {
+	 *     const { openAcdc } = acdcExports;
+	 *     if ( Math.random() < 0.5 ) {
+	 *         const statementsDialog = await openAcdc();
+	 *         await statementsDialog.filesWidget.loadCategory( 'Category:Test images' );
+	 *     }
+	 * } );
+	 * ```
+	 */
+	mw.hook( 'gadget.acdc.loaded' ).fire( exports );
 }( mediaWiki, jQuery ) );
