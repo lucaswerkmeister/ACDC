@@ -69,6 +69,12 @@
 				'The meaning of this is not clear ' +
 				'(remove only qualifiers, or remove whole statement only if it has these qualifiers?), ' +
 				'so this is currenty not supported.',
+			'gadget-acdc-error-statement-with-references-to-remove':
+				'You specified a statement with references ' +
+				'in the “{{int:gadget-acdc-field-statements-to-remove}}” section. ' +
+				'The meaning of this is not clear ' +
+				'(remove only references, or remove whole statement only if it has these references?), ' +
+				'so this is currenty not supported.',
 			// TODO implement the following error
 			'gadget-acdc-error-statement-to-add-and-remove':
 				'You specified statements with the same property and value ' +
@@ -795,6 +801,7 @@ body.acdc-active .uls-menu {
 
 		this.hasDuplicateStatementsToRemovePerProperty = {};
 		this.hasStatementWithQualifiersToRemovePerProperty = {};
+		this.hasStatementWithReferencesToRemovePerProperty = {};
 		this.statementToRemoveWidgets = [];
 		this.addPropertyToRemoveWidget = new AddPropertyWidget( {
 			$overlay: this.$overlay,
@@ -861,6 +868,13 @@ body.acdc-active .uls-menu {
 		} );
 		this.statementWithQualifiersToRemoveError.toggle( false ); // see updateShowStatementWithQualifiersToRemoveError
 		this.$foot.append( this.statementWithQualifiersToRemoveError.$element );
+
+		this.statementWithReferencesToRemoveError = new OO.ui.MessageWidget( {
+			type: 'error',
+			label: $.i18n( 'gadget-acdc-error-statement-with-references-to-remove' ),
+		} );
+		this.statementWithReferencesToRemoveError.toggle( false ); // see updateShowStatementWithReferencesToRemoveError
+		this.$foot.append( this.statementWithReferencesToRemoveError.$element );
 
 		const favoritePropertiesToAdd = window.acdcFavoritePropertiesToAdd ||
 			window.acdcFavoriteProperties ||
@@ -986,11 +1000,13 @@ body.acdc-active .uls-menu {
 			// check if there are any duplicate statements or statements with qualifiers for this property
 			this.hasDuplicateStatementsToRemovePerProperty[ id ] = false;
 			this.hasStatementWithQualifiersToRemovePerProperty[ id ] = false;
+			this.hasStatementWithReferencesToRemovePerProperty[ id ] = false;
 			const itemWidgets = statementToRemoveWidget.getItems();
 
 			for ( const itemWidget of itemWidgets ) {
 				itemWidget.$element.removeClass( 'acdc-statementsDialog__statementWidget--duplicate-statement' );
 				itemWidget.$element.removeClass( 'acdc-statementsDialog__statementWidget--statement-with-qualifiers-to-remove' );
+				itemWidget.$element.removeClass( 'acdc-statementsDialog__statementWidget--statement-with-references-to-remove' );
 			}
 
 			// this is O(n²) but for small n
@@ -1007,15 +1023,19 @@ body.acdc-active .uls-menu {
 			}
 
 			for ( const itemWidget of itemWidgets ) {
-				// TODO we don’t check for references here (but WikibaseMediaInfo doesn’t support them yet as of writing this)
 				if ( !itemWidget.getData().getClaim().getQualifiers().isEmpty() ) {
 					this.hasStatementWithQualifiersToRemovePerProperty[ id ] = true;
 					itemWidget.$element.addClass( 'acdc-statementsDialog__statementWidget--statement-with-qualifiers-to-remove' );
+				}
+				if ( !itemWidget.getData().getReferences().isEmpty() ) {
+					this.hasStatementWithReferencesToRemovePerProperty[ id ] = true;
+					itemWidget.$element.addClass( 'acdc-statementsDialog__statementWidget--statement-with-references-to-remove' );
 				}
 			}
 
 			this.updateShowDuplicateStatementsToRemoveError();
 			this.updateShowStatementWithQualifiersToRemoveError();
+			this.updateShowStatementWithReferencesToRemoveError();
 			this.updateCanSave();
 		} );
 		this.statementToRemoveWidgets.push( statementToRemoveWidget );
@@ -1079,12 +1099,25 @@ body.acdc-active .uls-menu {
 									// full match, do nothing
 									return [];
 								} else {
-									// potentially add qualifiers and bump rank (on a copy of the existing statement)
-									// TODO we don’t support references here yet (but neither does WikibaseMediaInfo as of writing this)
+									// potentially add qualifiers+references and bump rank (on a copy of the existing statement)
 									const updatedStatement = statementDeserializer.deserialize(
 										statementSerializer.serialize( previousStatement ) );
 
 									updatedStatement.getClaim().getQualifiers().merge( newStatement.getClaim().getQualifiers() );
+
+									references:
+									for ( const newReference of newStatement.getReferences().toArray() ) {
+										for ( const existingReference of updatedStatement.getReferences().toArray() ) {
+											// call equals() on the inner SnakList, not on the Reference,
+											// because Reference.prototype.equals() also requires the hash to be equal,
+											// and most likely the existingReference has a hash and the newReference doesn’t
+											if ( existingReference.getSnaks().equals( newReference.getSnaks() ) ) {
+												continue references;
+											}
+										}
+										// not equal to any existing reference, add it as a new reference
+										updatedStatement.getReferences().addItem( newReference );
+									}
 
 									if ( newStatement.getRank() !== Statement.RANK.NORMAL &&
 										updatedStatement.getRank() === Statement.RANK.NORMAL ) {
@@ -1203,6 +1236,9 @@ body.acdc-active .uls-menu {
 	StatementsDialog.prototype.hasStatementWithQualifiersToRemove = function () {
 		return Object.values( this.hasStatementWithQualifiersToRemovePerProperty ).some( b => b );
 	};
+	StatementsDialog.prototype.hasStatementWithReferencesToRemove = function () {
+		return Object.values( this.hasStatementWithReferencesToRemovePerProperty ).some( b => b );
+	};
 	StatementsDialog.prototype.updateCanSave = function () {
 		this.actions.setAbilities( {
 			save: this.filesWidget.getTitles().length &&
@@ -1214,7 +1250,8 @@ body.acdc-active .uls-menu {
 				) &&
 				!this.hasDuplicateStatementsToAdd() &&
 				!this.hasDuplicateStatementsToRemove() &&
-				!this.hasStatementWithQualifiersToRemove(),
+				!this.hasStatementWithQualifiersToRemove() &&
+				!this.hasStatementWithReferencesToRemove(),
 		} );
 	};
 	StatementsDialog.prototype.updateShowDuplicateStatementsToAddError = function () {
@@ -1225,6 +1262,9 @@ body.acdc-active .uls-menu {
 	};
 	StatementsDialog.prototype.updateShowStatementWithQualifiersToRemoveError = function () {
 		this.statementWithQualifiersToRemoveError.toggle( this.hasStatementWithQualifiersToRemove() );
+	};
+	StatementsDialog.prototype.updateShowStatementWithReferencesToRemoveError = function () {
+		this.statementWithReferencesToRemoveError.toggle( this.hasStatementWithReferencesToRemove() );
 	};
 	StatementsDialog.prototype.getBodyHeight = function () {
 		// we ceil the body height to the next multiple of 200 so it doesn’t change too often
