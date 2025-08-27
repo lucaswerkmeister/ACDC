@@ -790,10 +790,19 @@ body.acdc-active .uls-menu {
 		this.filesWidget.connect( this, { change: 'updateCanSave' } );
 		this.filesWidget.connect( this, { change: 'updateSize' } );
 
+		const favoritePropertiesToAdd = window.acdcFavoritePropertiesToAdd ||
+			window.acdcFavoriteProperties ||
+			mw.config.get( 'wbmiDefaultProperties', [] );
+		const favoritePropertiesToRemove = window.acdcFavoritePropertiesToRemove ||
+			window.acdcFavoriteProperties ||
+			[];
+
 		this.hasDuplicateStatementsToAddPerProperty = {};
 		this.statementToAddWidgets = [];
 		this.addPropertyToAddWidget = new AddPropertyWidget( {
 			$overlay: this.$overlay,
+			// the favoritePropertiesToAdd are already added below, so disallow selecting them manually
+			propertyIds: favoritePropertiesToAdd.slice(),
 		} );
 		this.addPropertyToAddWidget.on( 'choose', ( _widget, { id, datatype } ) => this.addStatementToAddWidget( id, datatype ) );
 		this.addPropertyToAddWidget.connect( this, { choose: 'updateSize' } );
@@ -805,6 +814,8 @@ body.acdc-active .uls-menu {
 		this.statementToRemoveWidgets = [];
 		this.addPropertyToRemoveWidget = new AddPropertyWidget( {
 			$overlay: this.$overlay,
+			// the favoritePropertiesToRemove are already added below, so disallow selecting them manually
+			propertyIds: favoritePropertiesToRemove.slice(),
 		} );
 		this.addPropertyToRemoveWidget.on( 'choose', ( _widget, { id, datatype } ) => this.addStatementToRemoveWidget( id, datatype ) );
 		this.addPropertyToRemoveWidget.connect( this, { choose: 'updateSize' } );
@@ -876,12 +887,6 @@ body.acdc-active .uls-menu {
 		this.statementWithReferencesToRemoveError.toggle( false ); // see updateShowStatementWithReferencesToRemoveError
 		this.$foot.append( this.statementWithReferencesToRemoveError.$element );
 
-		const favoritePropertiesToAdd = window.acdcFavoritePropertiesToAdd ||
-			window.acdcFavoriteProperties ||
-			mw.config.get( 'wbmiDefaultProperties', [] );
-		const favoritePropertiesToRemove = window.acdcFavoritePropertiesToRemove ||
-			window.acdcFavoriteProperties ||
-			[];
 		propertyDatatypes( Array.from( new Set( [ ...favoritePropertiesToAdd, ...favoritePropertiesToRemove ] ) ) ).then( datatypes => {
 			for ( const favoritePropertyToAdd of favoritePropertiesToAdd ) {
 				this.addStatementToAddWidget( favoritePropertyToAdd, datatypes[ favoritePropertyToAdd ] );
