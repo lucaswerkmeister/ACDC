@@ -1432,7 +1432,6 @@ body.acdc-active .uls-menu {
 	 *
 	 * If you know what you’re doing, and you want to use these exports anyway:
 	 * if AC/DC has been installed on the wiki as a gadget,
-	 * using the "package" option in the gadget definition,
 	 * then the exports are available via `require( 'ext.gadget.ACDC' )`
 	 * (or `mw.loader.require( 'ext.gadget.ACDC' )` if you’re not in a context with a `require` function);
 	 * otherwise, assign `window.acdcExports = {}` before loading AC/DC,
