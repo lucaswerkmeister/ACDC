@@ -245,6 +245,7 @@
 		let css = `
 .acdc-statementsDialog__statementWidget--duplicate-statement,
 .acdc-statementsDialog__statementWidget--statement-with-qualifiers-to-remove,
+.acdc-statementsDialog__statementWidget--statement-with-references-to-remove,
 .acdc-statementsDialog__statementWidget--statement-to-add-and-remove {
 	border-left: 2px solid red;
 }
