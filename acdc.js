@@ -241,9 +241,8 @@
 			return;
 		}
 
-		const style = document.createElement( 'style' );
 		// TODO better way to indicate errors
-		style.innerHTML = `
+		let css = `
 .acdc-statementsDialog__statementWidget--duplicate-statement,
 .acdc-statementsDialog__statementWidget--statement-with-qualifiers-to-remove,
 .acdc-statementsDialog__statementWidget--statement-to-add-and-remove {
@@ -261,14 +260,14 @@ body.acdc-active .uls-menu {
 `;
 		const now = new Date();
 		if ( ( now.getMonth() + 1 ) === 9 && now.getDate() === 23 ) {
-			style.innerHTML += `
+			css += `
 .acdc-statementsDialog .oo-ui-processDialog-actions-primary .oo-ui-widget-enabled .oo-ui-buttonElement-button {
 	background: linear-gradient( #D60270 40%, #9B4F96 40%, 60%, #0038A8 60% );
 }
 `;
 		}
 
-		document.head.appendChild( style );
+		mw.util.addCSS( css );
 		installedStyles = true;
 	}
 
