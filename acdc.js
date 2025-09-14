@@ -75,7 +75,6 @@
 				'The meaning of this is not clear ' +
 				'(remove only references, or remove whole statement only if it has these references?), ' +
 				'so this is currenty not supported.',
-			// TODO implement the following error
 			'gadget-acdc-error-statement-to-add-and-remove':
 				'You specified statements with the same property and value ' +
 				'in the “{{int:gadget-acdc-field-statements-to-add}}” and ' +
@@ -812,6 +811,7 @@ body.acdc-active .uls-menu {
 		this.hasDuplicateStatementsToRemovePerProperty = {};
 		this.hasStatementWithQualifiersToRemovePerProperty = {};
 		this.hasStatementWithReferencesToRemovePerProperty = {};
+		this.hasStatementToAddAndRemovePerProperty = {};
 		this.statementToRemoveWidgets = [];
 		this.addPropertyToRemoveWidget = new AddPropertyWidget( {
 			$overlay: this.$overlay,
@@ -888,6 +888,13 @@ body.acdc-active .uls-menu {
 		this.statementWithReferencesToRemoveError.toggle( false ); // see updateShowStatementWithReferencesToRemoveError
 		this.$foot.append( this.statementWithReferencesToRemoveError.$element );
 
+		this.statementToAddAndRemoveError = new OO.ui.MessageWidget( {
+			type: 'error',
+			label: $.i18n( 'gadget-acdc-error-statement-to-add-and-remove' ),
+		} );
+		this.statementToAddAndRemoveError.toggle( false ); // see updateShowStatementToAddAndRemoveError
+		this.$foot.append( this.statementToAddAndRemoveError.$element );
+
 		const asyncInitializePromises = [];
 
 		asyncInitializePromises.push(
@@ -962,6 +969,17 @@ body.acdc-active .uls-menu {
 		}
 	};
 	/**
+	 * Get the StatementWidget for statements to add for this property,
+	 * if it already exists.
+	 *
+	 * @param {string} propertyId The property ID for statements to add (e.g. "P180").
+	 * @return {StatementWidget|undefined}
+	 */
+	StatementsDialog.prototype.peekStatementToAddWidget = function ( propertyId ) {
+		return this.statementToAddWidgets
+			.find( statementWidget => statementWidget.state.propertyId === propertyId );
+	};
+	/**
 	 * Add a StatementWidget for statements to add.
 	 * If a widget for this property already exists, return that and don’t add another one.
 	 *
@@ -970,8 +988,7 @@ body.acdc-active .uls-menu {
 	 * @return {StatementWidget}
 	 */
 	StatementsDialog.prototype.addStatementToAddWidget = function ( propertyId, datatype ) {
-		let statementToAddWidget = this.statementToAddWidgets
-			.find( statementWidget => statementWidget.state.propertyId === propertyId );
+		let statementToAddWidget = this.peekStatementToAddWidget( propertyId );
 		if ( statementToAddWidget ) {
 			return statementToAddWidget;
 		}
@@ -1009,13 +1026,27 @@ body.acdc-active .uls-menu {
 				}
 			}
 
+			this.updateHasStatementToAddAndRemovePerProperty( propertyId );
+
 			this.updateShowDuplicateStatementsToAddError();
+			this.updateShowStatementToAddAndRemoveError();
 			this.updateCanSave();
 		} );
 		this.statementToAddWidgets.push( statementToAddWidget );
 
 		statementToAddWidget.$element.insertBefore( this.addPropertyToAddWidget.$element );
 		return statementToAddWidget;
+	};
+	/**
+	 * Get the StatementWidget for statements to remove for this property,
+	 * if it already exists.
+	 *
+	 * @param {string} propertyId The property ID for statements to remove (e.g. "P180").
+	 * @return {StatementWidget|undefined}
+	 */
+	StatementsDialog.prototype.peekStatementToRemoveWidget = function ( propertyId ) {
+		return this.statementToRemoveWidgets
+			.find( statementWidget => statementWidget.state.propertyId === propertyId );
 	};
 	/**
 	 * Add a StatementWidget for statements to remove.
@@ -1026,8 +1057,7 @@ body.acdc-active .uls-menu {
 	 * @return {StatementWidget}
 	 */
 	StatementsDialog.prototype.addStatementToRemoveWidget = function ( propertyId, datatype ) {
-		let statementToRemoveWidget = this.statementToRemoveWidgets
-			.find( statementWidget => statementWidget.state.propertyId === propertyId );
+		let statementToRemoveWidget = this.peekStatementToRemoveWidget( propertyId );
 		if ( statementToRemoveWidget ) {
 			return statementToRemoveWidget;
 		}
@@ -1044,7 +1074,7 @@ body.acdc-active .uls-menu {
 		statementToRemoveWidget.connect( this, { change: 'updateCanSave' } );
 		statementToRemoveWidget.connect( this, { change: 'updateSize' } );
 		statementToRemoveWidget.on( 'change', () => {
-			// check if there are any duplicate statements or statements with qualifiers for this property
+			// check if there are any duplicate statements or statements with qualifiers/references for this property
 			this.hasDuplicateStatementsToRemovePerProperty[ propertyId ] = false;
 			this.hasStatementWithQualifiersToRemovePerProperty[ propertyId ] = false;
 			this.hasStatementWithReferencesToRemovePerProperty[ propertyId ] = false;
@@ -1080,9 +1110,12 @@ body.acdc-active .uls-menu {
 				}
 			}
 
+			this.updateHasStatementToAddAndRemovePerProperty( propertyId );
+
 			this.updateShowDuplicateStatementsToRemoveError();
 			this.updateShowStatementWithQualifiersToRemoveError();
 			this.updateShowStatementWithReferencesToRemoveError();
+			this.updateShowStatementToAddAndRemoveError();
 			this.updateCanSave();
 		} );
 		this.statementToRemoveWidgets.push( statementToRemoveWidget );
@@ -1275,6 +1308,35 @@ body.acdc-active .uls-menu {
 
 		return true;
 	};
+	StatementsDialog.prototype.updateHasStatementToAddAndRemovePerProperty = function ( propertyId ) {
+		const statementToAddWidget = this.peekStatementToAddWidget( propertyId );
+		if ( !statementToAddWidget ) {
+			return;
+		}
+		const statementToRemoveWidget = this.peekStatementToRemoveWidget( propertyId );
+		if ( !statementToRemoveWidget ) {
+			return;
+		}
+
+		const addItemWidgets = statementToAddWidget.getItems();
+		const removeItemWidgets = statementToRemoveWidget.getItems();
+
+		this.hasStatementToAddAndRemovePerProperty[ propertyId ] = false;
+		for ( const itemWidget of [ ...addItemWidgets, ...removeItemWidgets ] ) {
+			itemWidget.$element.removeClass( 'acdc-statementsDialog__statementWidget--statement-to-add-and-remove' );
+		}
+
+		// this is O(n×m) but for small n+m
+		for ( const addItemWidget of addItemWidgets ) {
+			for ( const removeItemWidget of removeItemWidgets ) {
+				if ( addItemWidget.getData().getClaim().getMainSnak().equals( removeItemWidget.getData().getClaim().getMainSnak() ) ) {
+					this.hasStatementToAddAndRemovePerProperty[ propertyId ] = true;
+					addItemWidget.$element.addClass( 'acdc-statementsDialog__statementWidget--statement-to-add-and-remove' );
+					removeItemWidget.$element.addClass( 'acdc-statementsDialog__statementWidget--statement-to-add-and-remove' );
+				}
+			}
+		}
+	};
 	StatementsDialog.prototype.hasDuplicateStatementsToAdd = function () {
 		return Object.values( this.hasDuplicateStatementsToAddPerProperty ).some( b => b );
 	};
@@ -1286,6 +1348,9 @@ body.acdc-active .uls-menu {
 	};
 	StatementsDialog.prototype.hasStatementWithReferencesToRemove = function () {
 		return Object.values( this.hasStatementWithReferencesToRemovePerProperty ).some( b => b );
+	};
+	StatementsDialog.prototype.hasStatementToAddAndRemove = function () {
+		return Object.values( this.hasStatementToAddAndRemovePerProperty ).some( b => b );
 	};
 	StatementsDialog.prototype.updateCanSave = function () {
 		this.actions.setAbilities( {
@@ -1299,7 +1364,8 @@ body.acdc-active .uls-menu {
 				!this.hasDuplicateStatementsToAdd() &&
 				!this.hasDuplicateStatementsToRemove() &&
 				!this.hasStatementWithQualifiersToRemove() &&
-				!this.hasStatementWithReferencesToRemove(),
+				!this.hasStatementWithReferencesToRemove() &&
+				!this.hasStatementToAddAndRemove(),
 		} );
 	};
 	StatementsDialog.prototype.updateShowDuplicateStatementsToAddError = function () {
@@ -1313,6 +1379,9 @@ body.acdc-active .uls-menu {
 	};
 	StatementsDialog.prototype.updateShowStatementWithReferencesToRemoveError = function () {
 		this.statementWithReferencesToRemoveError.toggle( this.hasStatementWithReferencesToRemove() );
+	};
+	StatementsDialog.prototype.updateShowStatementToAddAndRemoveError = function () {
+		this.statementToAddAndRemoveError.toggle( this.hasStatementToAddAndRemove() );
 	};
 	StatementsDialog.prototype.getBodyHeight = function () {
 		// we ceil the body height to the next multiple of 200 so it doesn’t change too often
