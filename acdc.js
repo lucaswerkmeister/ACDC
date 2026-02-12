@@ -1165,6 +1165,14 @@ body.acdc-active .uls-menu {
 			statementSerializer = new StatementSerializer(),
 			statementDeserializer = new StatementDeserializer();
 		for ( const [ title, entityId ] of Object.entries( entityIds ) ) {
+			// If there is no entity for this file (no SDC data), skip it
+			if ( !entityId || !entityData[ entityId ] ) {
+				console.warn( `AC/DC: no entity for ${ title }, skipping` );
+				this.filesWidget.removeTagByData( title );
+				this.statementsProgressBarWidget.finishedEntity();
+				continue;
+			}
+
 			const guidGenerator = new ClaimGuidGenerator( entityId );
 
 			for ( const statementToAddWidget of this.statementToAddWidgets ) {
