@@ -80,6 +80,10 @@
 				'in the “{{int:gadget-acdc-field-statements-to-add}}” and ' +
 				'“{{int:gadget-acdc-field-statements-to-remove}}” sections. ' +
 				'The meaning of this is not clear, so it is currently not supported.',
+			'gadget-acdc-warning-missing-files-top':
+				'The following {{PLURAL:$1|file does|files do}} not exist:',
+			'gadget-acdc-warning-missing-files-bottom':
+				'Do you want to save changes for the remaining files anyway?',
 		},
 	} );
 	await $.i18n().load(
@@ -103,7 +107,7 @@
 	 * Maps titles to entity IDs.
 	 *
 	 * @param {string[]} titles
-	 * @return {Promise<Object.<string,string>>} map from title to entity ID
+	 * @return {Promise<Object.<string,?string>>} map from title to entity ID (null for missing pages)
 	 */
 	async function titlesToEntityIds( titles ) {
 		const allTitles = titles.slice(), // copy that we can splice without affecting the original
@@ -116,7 +120,7 @@
 				formatversion: 2,
 			} );
 			for ( const page of response.query.pages ) {
-				entityIds[ page.title ] = `M${ page.pageid }`;
+				entityIds[ page.title ] = page.missing ? null : `M${ page.pageid }`;
 			}
 		}
 		return entityIds;
@@ -782,6 +786,7 @@ body.acdc-active .uls-menu {
 		installStyles();
 
 		this.stopped = false;
+		this.warnedAboutMissingTitles = new Set();
 
 		this.filesWidget = new FilesWidget( {
 			indicator: 'required',
@@ -895,6 +900,10 @@ body.acdc-active .uls-menu {
 		this.statementToAddAndRemoveError.toggle( false ); // see updateShowStatementToAddAndRemoveError
 		this.$foot.append( this.statementToAddAndRemoveError.$element );
 
+		// these buttons are shown if we throw an OO.ui.Error( 'message', { warning: true } ), see getActionProcess()
+		this.dismissButton.setLabel( OO.ui.msg( 'ooui-dialog-message-reject' ) ); // “Cancel”
+		this.retryButton.setLabel( OO.ui.msg( 'ooui-dialog-process-continue' ) ); // “Continue”
+
 		const asyncInitializePromises = [];
 
 		asyncInitializePromises.push(
@@ -946,18 +955,48 @@ body.acdc-active .uls-menu {
 				return new OO.ui.Process( async () => {
 					this.actions.setMode( 'save' );
 
-					const finished = await this.save().catch( error => {
-						console.error( 'AC/DC: error while saving', error );
-						throw new OO.ui.Error( error, { recoverable: false } );
-					} );
+					try {
+						await this.prepareSave();
 
-					if ( finished ) {
-						this.actions.setMode( 'edit' );
-						this.close();
+						await this.loadEntityIds();
+						const missingTitles = [];
+						for ( const [ title, entityId ] of Object.entries( this.entityIds ) ) {
+							if ( entityId === null ) {
+								missingTitles.push( title );
+							}
+						}
+						if ( missingTitles.length > 0 &&
+								!this.warnedAboutMissingTitles.has( missingTitles.join( '|' ) ) ) {
+							this.warnedAboutMissingTitles.add( missingTitles.join( '|' ) );
+							let $message = $( '<p>' ).text(
+								$.i18n( 'gadget-acdc-warning-missing-files-top', missingTitles.length ) );
+							const $ul = $( '<ul>' );
+							for ( const title of missingTitles ) {
+								$ul.append( $( '<li>' ).text( title ) );
+							}
+							$message = $message.add( $ul ).add( $( '<p>' ).text(
+								$.i18n( 'gadget-acdc-warning-missing-files-bottom' ) ) );
+							throw new OO.ui.Error( $message, { warning: true } );
+						}
+
+						await this.loadEntityData();
+
+						const finished = await this.save().catch( error => {
+							console.error( 'AC/DC: error while saving', error );
+							throw new OO.ui.Error( error, { recoverable: false } );
+						} );
+						if ( finished ) {
+							this.actions.setMode( 'edit' );
+							this.close();
+						}
+					} finally {
+						// regardless whether we finished, stopped or error/warned, remove the progress bar again
+						this.statementsProgressBarWidget.disable();
+						// clean up partial save data
+						delete this.titles;
+						delete this.entityIds;
+						delete this.entityData;
 					}
-				} ).next( async () => {
-					// regardless whether we finished or stopped, remove the progress bar again
-					this.statementsProgressBarWidget.disable();
 				} );
 			case 'stop':
 				return new OO.ui.Process( async () => {
@@ -1132,44 +1171,70 @@ body.acdc-active .uls-menu {
 		}
 	};
 	/**
-	 * Saves changes to the statements.
+	 * Prepare for saving, without actually making changes yet.
+	 * Sets `this.titles`; part 1/4 of the “save” sequence.
 	 *
-	 * @return {Promise<boolean>} Whether the save finished completely (true) or was stopped prematurely (false).
+	 * Note that the changes here (disable widgets etc.) are not reversible in the UI –
+	 * AC/DC generally isn’t designed to be “reentrant”,
+	 * if you want to make more changes then you should reload the page first.
 	 */
-	StatementsDialog.prototype.save = async function () {
-		const titles = this.filesWidget.getTitles();
+	StatementsDialog.prototype.prepareSave = async function () {
+		this.titles = this.filesWidget.getTitles();
 		this.statementsProgressBarWidget.enable(
-			titles.length,
+			this.titles.length,
 			this.statementToAddWidgets.reduce( ( acc, statementToAddWidget ) => acc + statementToAddWidget.getData().length, 0 ) +
 				this.statementToRemoveWidgets.reduce( ( acc, statementToRemoveWidget ) => acc + statementToRemoveWidget.getData().length, 0 ),
 		);
-
-		let summary;
-		if ( titles.length >= 10 && mw.config.get( 'wgServer' ) === '//commons.wikimedia.org' ) {
-			const hash = Math.floor( Math.random() * Math.pow( 2, 48 ) ).toString( 16 );
-			summary = `([[:toolforge:editgroups-commons/b/CB/${ hash }|details]])`;
-		}
 
 		await Promise.all( this.statementToAddWidgets.map(
 			statementToAddWidget => statementToAddWidget.setDisabled( true ).setEditing( false ) ) );
 		await Promise.all( this.statementToRemoveWidgets.map(
 			statementToRemoveWidget => statementToRemoveWidget.setDisabled( true ).setEditing( false ) ) );
-
-		const entityIds = await titlesToEntityIds( titles );
+	};
+	/**
+	 * Load the entity IDs of the titles (`this.titles`).
+	 * Sets `this.entityIds`; part 2/4 of the “save” sequence.
+	 */
+	StatementsDialog.prototype.loadEntityIds = async function () {
+		this.entityIds = await titlesToEntityIds( this.titles );
 		this.statementsProgressBarWidget.finishedLoadingEntityIds();
-
-		const entityData = await entityIdsToData( Object.values( entityIds ), [ 'info', 'claims' ] );
+	};
+	/**
+	 * Load the entity data of the IDs (`this.entityIds`).
+	 * Sets `this.entityData`; part 3/4 of the “save” sequence.
+	 */
+	StatementsDialog.prototype.loadEntityData = async function () {
+		const entityIds = Object.values( this.entityIds )
+			.filter( entityId => entityId !== null );
+		this.entityData = await entityIdsToData( entityIds, [ 'info', 'claims' ] );
 		this.statementsProgressBarWidget.finishedLoadingEntityData();
+	};
+	/**
+	 * Saves changes to the statements of the entities (`this.entityIds`, `this.entityData`).
+	 * Part 4/4 of the “save” sequence.
+	 *
+	 * @return {Promise<boolean>} Whether the save finished completely (true) or was stopped prematurely (false).
+	 */
+	StatementsDialog.prototype.save = async function () {
+		let summary;
+		if ( Object.values( this.entityData ).length >= 10 &&
+				mw.config.get( 'wgServer' ) === '//commons.wikimedia.org' ) {
+			const hash = Math.floor( Math.random() * Math.pow( 2, 48 ) ).toString( 16 );
+			summary = `([[:toolforge:editgroups-commons/b/CB/${ hash }|details]])`;
+		}
 
 		const statementListDeserializer = new StatementListDeserializer(),
 			statementSerializer = new StatementSerializer(),
 			statementDeserializer = new StatementDeserializer();
-		for ( const [ title, entityId ] of Object.entries( entityIds ) ) {
+		for ( const [ title, entityId ] of Object.entries( this.entityIds ) ) {
+			if ( entityId === null ) {
+				continue;
+			}
 			const guidGenerator = new ClaimGuidGenerator( entityId );
 
 			for ( const statementToAddWidget of this.statementToAddWidgets ) {
 				const previousStatements = statementListDeserializer.deserialize(
-					entityData[ entityId ].statements[ statementToAddWidget.state.propertyId ] || [] );
+					this.entityData[ entityId ].statements[ statementToAddWidget.state.propertyId ] || [] );
 				// TODO change [].concat(...X.map()) back to X.flatMap() once MediaWiki supports ES2019
 				const changedStatements = [].concat( ...statementToAddWidget.getData().toArray()
 					.map( newStatement => {
@@ -1232,7 +1297,7 @@ body.acdc-active .uls-menu {
 					await api.postWithEditToken( api.assertCurrentUser( {
 						action: 'wbsetclaim',
 						claim: JSON.stringify( statementSerializer.serialize( changedStatement ) ),
-						baserevid: entityData[ entityId ].lastrevid,
+						baserevid: this.entityData[ entityId ].lastrevid,
 						bot: 1,
 						summary,
 						tags: this.tags,
@@ -1252,7 +1317,7 @@ body.acdc-active .uls-menu {
 
 			for ( const statementToRemoveWidget of this.statementToRemoveWidgets ) {
 				const previousStatements = statementListDeserializer.deserialize(
-					entityData[ entityId ].statements[ statementToRemoveWidget.state.propertyId ] || [] );
+					this.entityData[ entityId ].statements[ statementToRemoveWidget.state.propertyId ] || [] );
 				// TODO change [].concat(...X.map()) back to X.flatMap() once MediaWiki supports ES2019
 				const statementIdsToRemove = [].concat( ...statementToRemoveWidget.getData().toArray()
 					.map( statementToRemove => {
@@ -1280,7 +1345,7 @@ body.acdc-active .uls-menu {
 					await api.postWithEditToken( api.assertCurrentUser( {
 						action: 'wbremoveclaims',
 						claim: [ statementIdToRemove ],
-						baserevid: entityData[ entityId ].lastrevid,
+						baserevid: this.entityData[ entityId ].lastrevid,
 						bot: 1,
 						summary,
 						tags: this.tags,
