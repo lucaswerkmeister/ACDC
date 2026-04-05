@@ -17,8 +17,50 @@ jobs:
       - uses: browser-actions/setup-chrome@latest
         with:
           chrome-version: stable
+      - name: configure Git to prefer GitHub over Wikimedia Gerrit and Phabricator to avoid rate limit errors (429)
+        run: |
+          cat >> ~/.gitconfig << 'EOF'
+
+          [url "https://github.com/wikimedia/mediawiki-extensions-"]
+          insteadOf = "https://gerrit.wikimedia.org/r/mediawiki/extensions/"
+
+          [url "https://github.com/wikimedia/data-values-value-view.git"]
+          insteadOf = "https://gerrit.wikimedia.org/r/data-values/value-view"
+
+          [url "https://github.com/wmde/WikibaseSerializationJavaScript.git"]
+          insteadOf = "https://phabricator.wikimedia.org/source/wikibase-serialization.git"
+
+          [url "https://github.com/wmde/DataValuesJavaScript.git"]
+          insteadOf = "https://phabricator.wikimedia.org/source/datavalues-javascript.git"
+
+          [url "https://github.com/wmde/WikibaseDataModelJavaScript.git"]
+          insteadOf = "https://phabricator.wikimedia.org/source/wikibase-data-model.git"
+
+          [url "https://github.com/wikimedia/wikibase-termbox.git"]
+          insteadOf = "https://gerrit.wikimedia.org/r/wikibase/termbox"
+
+          [url "https://github.com/wikimedia/wikibase-javascript-api.git"]
+          insteadOf = "https://gerrit.wikimedia.org/r/wikibase/javascript-api"
+          EOF
+      - uses: lucaswerkmeister/setup-mediawiki@v1
+        id: setup-mediawiki
+        with:
+          extensions: |
+            Wikibase
+            WikibaseMediaInfo
+            UniversalLanguageSelector # required by WikibaseMediaInfo
+            WikibaseCirrusSearch # required by WikibaseMediaInfo
+          local-settings: |
+            $wgFileExtensions[] = 'pdf';
+      - name: import test files
+        env:
+          MEDIAWIKI_INSTALL_DIR: ${{ steps.setup-mediawiki.outputs.install-directory }}
+        run: |
+          "$MEDIAWIKI_INSTALL_DIR/maintenance/run" importImages test/browser/files
       - run: npm install
       - run: make check
         env:
-          MEDIAWIKI_USERNAME: ${{ secrets.MEDIAWIKI_USERNAME }}
-          MEDIAWIKI_PASSWORD: ${{ secrets.MEDIAWIKI_PASSWORD }}
+          MEDIAWIKI_USERNAME: ${{ steps.setup-mediawiki.outputs.admin-username }}
+          MEDIAWIKI_PASSWORD: ${{ steps.setup-mediawiki.outputs.admin-password }}
+          MEDIAWIKI_API_URL: ${{ steps.setup-mediawiki.outputs.api-url }}
+          MEDIAWIKI_INDEX_URL: ${{ steps.setup-mediawiki.outputs.index-url }}

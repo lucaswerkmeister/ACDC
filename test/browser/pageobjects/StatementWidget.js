@@ -12,11 +12,18 @@ class StatementWidget {
 			.then( element => element.$( '.wbmi-statement-header a' ) )
 			.then( a => a.getAttribute( 'href' ) )
 			.then( href => {
-				const index = href.lastIndexOf( '/' );
+				let index = href.lastIndexOf( '/' );
 				if ( index === -1 ) {
 					throw new Error( `Property ID link unexpectedly contains no /: ${ href }` );
 				}
-				const propertyId = href.slice( index + 1 );
+				const propertyTitleOrId = href.slice( index + 1 );
+				let propertyId;
+				index = propertyTitleOrId.lastIndexOf( ':' );
+				if ( index !== -1 ) {
+					propertyId = propertyTitleOrId.slice( index + 1 );
+				} else {
+					propertyId = propertyTitleOrId;
+				}
 				if ( !/^P[1-9][0-9]*$/.test( propertyId ) ) {
 					throw new Error( `Property ID does not match expected pattern: ${ propertyId } (href: ${ href })` );
 				}

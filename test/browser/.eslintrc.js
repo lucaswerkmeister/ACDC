@@ -5,6 +5,9 @@ module.exports = {
 		node: true,
 		'webdriverio/wdio': true,
 	},
+	parserOptions: {
+		ecmaVersion: 2021,
+	},
 	rules: {
 		// $ refers to wdio, not jQuery, so turn off any no-jquery/* rules
 		'no-jquery/no-global-selector': 'off',

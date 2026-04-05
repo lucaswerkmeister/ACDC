@@ -2,15 +2,21 @@ const assert = require( 'assert' ),
 	fs = require( 'fs' ).promises,
 	process = require( 'process' ),
 	MWBot = require( 'mwbot' ),
-	wdioConf = require( '../../../wdio.conf' ),
 	ACDC = require( '../pageobjects/ACDC' ),
 	MediaWiki = require( '../pageobjects/MediaWiki' ),
 	{ searchTimeout, submitTimeout } = require( '../timeouts' );
 
-const bot = new MWBot( { apiUrl: `${ wdioConf.config.baseUrl }/w/api.php` } );
+const apiUrl = process.env.MEDIAWIKI_API_URL,
+	indexUrl = process.env.MEDIAWIKI_INDEX_URL;
+
+const bot = new MWBot( { apiUrl } );
 
 describe( 'AC/DC', () => {
-	let acdc;
+	let acdc,
+		wikibaseItemPropertyId1 = process.env.MEDIAWIKI_WIKIBASE_ITEM_PROPERTY_ID_1,
+		wikibaseItemPropertyId2 = process.env.MEDIAWIKI_WIKIBASE_ITEM_PROPERTY_ID_2,
+		itemId1 = process.env.MEDIAWIKI_ITEM_ID_1,
+		itemId2 = process.env.MEDIAWIKI_ITEM_ID_2;
 
 	before( 'load AC/DC code from disk', async () => {
 		acdc = await fs.readFile( 'acdc.js', { encoding: 'utf8' } );
@@ -65,9 +71,130 @@ describe( 'AC/DC', () => {
 		await installGlobalErrorHandler();
 	}
 
+	/**
+	 * Open a blank page, inject AC/DC code and log in.
+	 *
+	 * @param {*} test The test on which to call `.skip()` if no credentials are available.
+	 * Make sure your test function (or hook) is not an arrow function, and pass `this`.
+	 */
+	async function logIn( test ) {
+		const username = process.env.MEDIAWIKI_USERNAME,
+			password = process.env.MEDIAWIKI_PASSWORD;
+		if ( username === undefined || password === undefined ) {
+			test.skip();
+		}
+
+		await browser.url( `${ indexUrl }?title=Special:BlankPage&uselang=en&acdcShow=1` );
+		await injectAcdc( {
+			acdcFavoriteProperties: [],
+			acdcEnableRemoveFeature: true, // temporary
+		} );
+
+		const error = await browser.executeAsync( async ( username, password, done ) => {
+			const api = new mediaWiki.Api();
+			let response = await api.get( {
+				action: 'query',
+				meta: [ 'tokens', 'userinfo' ],
+				type: 'login',
+			} );
+			if ( response.query.userinfo.name === username ) {
+				// already logged in
+				mediaWiki.config.set( 'wgUserName', username );
+				done( null );
+				return;
+			}
+			const token = response.query.tokens.logintoken;
+			response = await api.post( {
+				action: 'login',
+				lgname: username,
+				lgpassword: password,
+				lgtoken: token,
+			} );
+			if ( response.login.lgusername !== username ) {
+				// If lgusername !== username, we may be logged in now,
+				// but we won’t be able to detect “already logged in” above
+				// for the next test run, so better to fail here.
+				let reason = `Expected to log in as ${ username } but returned ${ response.login.lgusername }.`;
+				reason += '\nIf using a bot password, please use the form username / appid@password';
+				reason += ' rather than username@appid / password.';
+				if ( response.login.reason ) {
+					reason += '\n' + response.login.reason;
+				}
+				done( reason );
+			} else {
+				mediaWiki.config.set( 'wgUserName', username );
+				done( null );
+			}
+		}, username, password );
+		if ( error ) {
+			throw new Error( error );
+		}
+	}
+
+	/**
+	 * Ensure wikibaseItemPropertyId1, wikibaseItemPropertyId2, itemId1 and itemId2 are set.
+	 *
+	 * @param {*} test The test on which to call `.skip()` if no credentials are available.
+	 * Make sure your test function (or hook) is not an arrow function, and pass `this`.
+	 * @return {boolean} Whether the function already called `logIn` or not.
+	 * If false, all the environment variables were already
+	 * so if the caller needs to be logged in then it should call the function itself.
+	 * If true, we already logged in (or skip the test) and the caller does not need to do it again.
+	 */
+	async function setUpTestEntities( test ) {
+		if ( wikibaseItemPropertyId1 && wikibaseItemPropertyId2 && itemId1 && itemId2 ) {
+			return false;
+		}
+
+		await logIn( test );
+		async function createItem( enLabel ) {
+			const response = await browser.executeAsync( ( enLabel, done ) => {
+				const api = new mediaWiki.Api();
+				api.postWithEditToken( {
+					action: 'wbeditentity',
+					new: 'item',
+					data: JSON.stringify( {
+						labels: { en: { language: 'en', value: enLabel } },
+					} ),
+				} ).then( done, ( ...args ) => done( args ) );
+			}, enLabel );
+			if ( typeof response === 'object' && typeof response.entity === 'object' && typeof response.entity.id === 'string' ) {
+				return response.entity.id;
+			} else {
+				throw new Error( JSON.stringify( response ) );
+			}
+		}
+		async function createProperty( dataType, enLabel ) {
+			const response = await browser.executeAsync( ( dataType, enLabel, done ) => {
+				const api = new mediaWiki.Api();
+				api.postWithEditToken( {
+					action: 'wbeditentity',
+					new: 'property',
+					data: JSON.stringify( {
+						datatype: dataType,
+						labels: { en: { language: 'en', value: enLabel } },
+					} ),
+				} ).then( done, ( ...args ) => done( args ) );
+			}, dataType, enLabel );
+			if ( typeof response === 'object' && typeof response.entity === 'object' && typeof response.entity.id === 'string' ) {
+				return response.entity.id;
+			} else {
+				throw new Error( JSON.stringify( response ) );
+			}
+		}
+
+		/* eslint-disable es-x/no-logical-assignment-operators */
+		wikibaseItemPropertyId1 ??= await createProperty( 'wikibase-item', 'AC/DC test item property 1' );
+		wikibaseItemPropertyId2 ??= await createProperty( 'wikibase-item', 'AC/DC test item property 2' );
+		itemId1 ??= await createItem( 'AC/DC test item 1' );
+		itemId2 ??= await createItem( 'AC/DC test item 2' );
+		/* eslint-enable */
+		return true;
+	}
+
 	describe( 'default mode', () => {
 		beforeEach( 'open blank page and inject AC/DC code', async () => {
-			await browser.url( '/wiki/Special:BlankPage?uselang=en&useskin=vector-2022' );
+			await browser.url( `${ indexUrl }?title=Special:BlankPage&uselang=en&useskin=vector-2022` );
 			await injectAcdc();
 			await MediaWiki.ensureToolsShown();
 		} );
@@ -86,7 +213,7 @@ describe( 'AC/DC', () => {
 
 	describe( 'show-immediately mode', () => {
 		beforeEach( 'open blank page and inject AC/DC code', async () => {
-			await browser.url( '/wiki/Special:BlankPage?uselang=en&acdcShow=1' );
+			await browser.url( `${ indexUrl }?title=Special:BlankPage&uselang=en&acdcShow=1` );
 			await injectAcdc();
 		} );
 
@@ -105,7 +232,7 @@ describe( 'AC/DC', () => {
 
 	describe( '“loaded” hook', () => {
 		beforeEach( 'open blank page', async () => {
-			await browser.url( '/wiki/Special:BlankPage?uselang=en' );
+			await browser.url( `${ indexUrl }?title=Special:BlankPage&uselang=en` );
 		} );
 
 		it( 'fires early-registered and late-registered hooks', async () => {
@@ -132,7 +259,7 @@ describe( 'AC/DC', () => {
 
 	describe( 'FilesWidget', () => {
 		beforeEach( 'open blank page and inject AC/DC code', async () => {
-			await browser.url( '/wiki/Special:BlankPage?uselang=en&acdcShow=1' );
+			await browser.url( `${ indexUrl }?title=Special:BlankPage&uselang=en&acdcShow=1` );
 			await injectAcdc();
 			await ( await ACDC.dialog ).waitForDisplayed( { timeoutMsg: 'expected AC/DC to be opened' } );
 		} );
@@ -218,11 +345,12 @@ describe( 'AC/DC', () => {
 	} );
 
 	describe( 'favorite properties', () => {
-		const wikibaseItemPropertyId1 = 'P734';
-		const wikibaseItemPropertyId2 = 'P116'; // NOTE: not an Item property on Wikidata
+		before( 'set up test entities', async function () {
+			await setUpTestEntities( this );
+		} );
 
 		it( 'registers favorite properties (to add and remove)', async () => {
-			await browser.url( '/wiki/Special:BlankPage?uselang=en&acdcShow=1' );
+			await browser.url( `${ indexUrl }?title=Special:BlankPage&uselang=en&acdcShow=1` );
 			await injectAcdc( {
 				acdcFavoriteProperties: [ wikibaseItemPropertyId1 ],
 				acdcEnableRemoveFeature: true, // temporary
@@ -243,7 +371,7 @@ describe( 'AC/DC', () => {
 		} );
 
 		it( 'registers favorite properties to add and to remove (separately)', async () => {
-			await browser.url( '/wiki/Special:BlankPage?uselang=en&acdcShow=1' );
+			await browser.url( `${ indexUrl }?title=Special:BlankPage&uselang=en&acdcShow=1` );
 			await injectAcdc( {
 				acdcFavoritePropertiesToAdd: [ wikibaseItemPropertyId1 ],
 				acdcFavoritePropertiesToRemove: [ wikibaseItemPropertyId2 ],
@@ -271,10 +399,6 @@ describe( 'AC/DC', () => {
 			'File:ACDC test file 1.pdf': -1,
 			'File:ACDC test file 2.pdf': -1,
 		};
-		const wikibaseItemPropertyId1 = 'P734';
-		const wikibaseItemPropertyId2 = 'P116'; // NOTE: not an Item property on Wikidata
-		const itemId1 = 'Q15';
-		const itemId2 = 'Q21';
 
 		before( 'load page IDs', async () => {
 			const response = await bot.request( {
@@ -287,57 +411,10 @@ describe( 'AC/DC', () => {
 			}
 		} );
 
-		beforeEach( 'open blank page, inject AC/DC code and log in', async function () {
-			const username = process.env.MEDIAWIKI_USERNAME,
-				password = process.env.MEDIAWIKI_PASSWORD;
-			if ( username === undefined || password === undefined ) {
-				this.skip();
-			}
-
-			await browser.url( '/wiki/Special:BlankPage?uselang=en&acdcShow=1' );
-			await injectAcdc( {
-				acdcFavoriteProperties: [],
-				acdcEnableRemoveFeature: true, // temporary
-			} );
-
-			const error = await browser.executeAsync( async ( username, password, done ) => {
-				const api = new mediaWiki.Api();
-				let response = await api.get( {
-					action: 'query',
-					meta: [ 'tokens', 'userinfo' ],
-					type: 'login',
-				} );
-				if ( response.query.userinfo.name === username ) {
-					// already logged in
-					mediaWiki.config.set( 'wgUserName', username );
-					done( null );
-					return;
-				}
-				const token = response.query.tokens.logintoken;
-				response = await api.post( {
-					action: 'login',
-					lgname: username,
-					lgpassword: password,
-					lgtoken: token,
-				} );
-				if ( response.login.lgusername !== username ) {
-					// If lgusername !== username, we may be logged in now,
-					// but we won’t be able to detect “already logged in” above
-					// for the next test run, so better to fail here.
-					let reason = `Expected to log in as ${ username } but returned ${ response.login.lgusername }.`;
-					reason += '\nIf using a bot password, please use the form username / appid@password';
-					reason += ' rather than username@appid / password.';
-					if ( response.login.reason ) {
-						reason += '\n' + response.login.reason;
-					}
-					done( reason );
-				} else {
-					mediaWiki.config.set( 'wgUserName', username );
-					done( null );
-				}
-			}, username, password );
-			if ( error ) {
-				throw new Error( error );
+		beforeEach( 'set up test entities, open blank page, inject AC/DC code and log in', async function () {
+			const loggedIn = await setUpTestEntities( this );
+			if ( !loggedIn ) {
+				await logIn( this );
 			}
 		} );
 

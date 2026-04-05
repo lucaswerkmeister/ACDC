@@ -16,6 +16,9 @@ module.exports = {
 		OO: 'readable',
 		wikibase: 'readable',
 	},
+	ignorePatterns: [
+		'/w/', // MediaWiki install path in CI
+	],
 	rules: {
 		'arrow-parens': [ 'error', 'as-needed' ],
 		'comma-dangle': [ 'error', 'always-multiline' ],
