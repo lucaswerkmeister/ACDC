@@ -419,17 +419,34 @@ body.acdc-active .uls-menu {
 			return $.Deferred().resolve( response ).promise();
 		}
 
-		return api.get( {
+		const params = {
 			action: 'query',
-			list: 'search',
-			srsearch: `prefix:${ ensureFileNamespace( prefix ) }`,
-			srinfo: [ /* no metadata */ ],
-			srprop: [ /* no properties (we only need title, which is always returned) */ ],
 			formatversion: 2,
-		} );
+		};
+		if ( mw.loader.getState( 'ext.cirrus.serp' ) !== null ) {
+			Object.assign( params, {
+				list: 'search',
+				srsearch: `prefix:${ ensureFileNamespace( prefix ) }`,
+				srinfo: [ /* no metadata */ ],
+				srprop: [ /* no properties (we only need title, which is always returned) */ ],
+			} );
+		} else {
+			if ( !this.warnedAboutMissingCirrusSearch ) {
+				console.warn( 'ACDC: Wiki seemingly lacks CirrusSearch, using worse prefix search for FileInputWidget' );
+				this.warnedAboutMissingCirrusSearch = true;
+			}
+			Object.assign( params, {
+				list: 'allpages',
+				apprefix: ensureFileNamespace( prefix ).slice( 'File:'.length ),
+				apnamespace: 6, // NS_FILE
+			} );
+		}
+
+		return api.get( params );
 	};
 	FileInputWidget.prototype.getLookupCacheDataFromResponse = function ( response ) {
-		return response.query.search.map( result => result.title );
+		return ( response.query.search || Object.values( response.query.allpages ) )
+			.map( result => result.title );
 	};
 	FileInputWidget.prototype.getLookupMenuOptionsFromData = function ( titles ) {
 		return titles
