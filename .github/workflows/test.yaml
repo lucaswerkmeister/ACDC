@@ -52,7 +52,6 @@ jobs:
             WikibaseCirrusSearch # required by WikibaseMediaInfo
           local-settings: |
             $wgFileExtensions[] = 'pdf';
-            $wgGroupPermissions['sysop']['apihighlimits'] = false; // work around T427695
       - name: import test files
         env:
           MEDIAWIKI_INSTALL_DIR: ${{ steps.setup-mediawiki.outputs.install-directory }}
