@@ -1000,6 +1000,7 @@ body.acdc-active .uls-menu {
 
 						const finished = await this.save().catch( error => {
 							console.error( 'AC/DC: error while saving', error );
+							window.acdcGlobalError = error;
 							throw new OO.ui.Error( error, { recoverable: false } );
 						} );
 						if ( finished ) {
