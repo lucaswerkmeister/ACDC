@@ -8,7 +8,7 @@ module.exports = {
 		'wikimedia',
 		'wikimedia/jsduck',
 		'wikimedia/jquery',
-		'wikimedia/language/es2017',
+		'wikimedia/language/es2019',
 	],
 	globals: {
 		mediaWiki: 'readable',

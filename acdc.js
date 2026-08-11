@@ -150,8 +150,7 @@
 		return entityData;
 	}
 
-	// TODO change back to an async generator function once MediaWiki supports for-await-of (T395347)
-	async function categoryFiles( categoryTitle, callback ) {
+	async function* categoryFiles( categoryTitle ) {
 		const originalParams = {
 			action: 'query',
 			list: 'categorymembers',
@@ -164,9 +163,7 @@
 		let response = {};
 		do {
 			response = await api.get( Object.assign( {}, originalParams, response.continue ) );
-			for ( const { title } of response.query.categorymembers ) {
-				await callback( title );
-			}
+			yield* response.query.categorymembers.map( member => member.title );
 		} while ( 'continue' in response );
 	}
 
@@ -186,12 +183,9 @@
 			props: [ 'datatype' ],
 			formatversion: 2,
 		} );
-		// TODO change back to Object.fromEntries() once MediaWiki supports ES2019
-		const datatypes = {};
-		for ( const [ propertyId, { datatype } ] of Object.entries( response.entities ) ) {
-			datatypes[ propertyId ] = datatype;
-		}
-		return datatypes;
+		return Object.fromEntries(
+			Object.entries( response.entities )
+				.map( ( [ propertyId, { datatype } ] ) => [ propertyId, datatype ] ) );
 	}
 
 	/**
@@ -635,10 +629,10 @@ body.acdc-active .uls-menu {
 		}
 	};
 	FilesWidget.prototype.loadCategory = async function ( categoryTitle ) {
-		await categoryFiles( categoryTitle, async file => {
+		for await ( const file of categoryFiles( categoryTitle ) ) {
 			this.addTag( file );
 			await microsleep();
-		} );
+		}
 	};
 	FilesWidget.prototype.loadPagePile = async function ( pagePileId ) {
 		const pileJson = await fetch(
@@ -1252,9 +1246,8 @@ body.acdc-active .uls-menu {
 			for ( const statementToAddWidget of this.statementToAddWidgets ) {
 				const previousStatements = statementListDeserializer.deserialize(
 					this.entityData[ entityId ].statements[ statementToAddWidget.state.propertyId ] || [] );
-				// TODO change [].concat(...X.map()) back to X.flatMap() once MediaWiki supports ES2019
-				const changedStatements = [].concat( ...statementToAddWidget.getData().toArray()
-					.map( newStatement => {
+				const changedStatements = statementToAddWidget.getData().toArray()
+					.flatMap( newStatement => {
 						for ( const previousStatement of previousStatements.toArray() ) {
 							if ( newStatement.getClaim().getMainSnak().equals( previousStatement.getClaim().getMainSnak() ) ) {
 								// main value matches
@@ -1303,7 +1296,7 @@ body.acdc-active .uls-menu {
 							newStatement.getReferences(),
 							newStatement.getRank(),
 						) ];
-					} ) );
+					} );
 
 				for ( const changedStatement of changedStatements ) {
 					if ( this.stopped ) {
@@ -1335,22 +1328,20 @@ body.acdc-active .uls-menu {
 			for ( const statementToRemoveWidget of this.statementToRemoveWidgets ) {
 				const previousStatements = statementListDeserializer.deserialize(
 					this.entityData[ entityId ].statements[ statementToRemoveWidget.state.propertyId ] || [] );
-				// TODO change [].concat(...X.map()) back to X.flatMap() once MediaWiki supports ES2019
-				const statementIdsToRemove = [].concat( ...statementToRemoveWidget.getData().toArray()
-					.map( statementToRemove => {
-						// TODO change [].concat(...X.map()) back to X.flatMap() once MediaWiki supports ES2019
-						const matchingStatementIds = [].concat( ...previousStatements.toArray().map( statement => {
+				const statementIdsToRemove = statementToRemoveWidget.getData().toArray()
+					.flatMap( statementToRemove => {
+						const matchingStatementIds = previousStatements.toArray().flatMap( statement => {
 							if ( statement.getClaim().getMainSnak().equals( statementToRemove.getClaim().getMainSnak() ) ) {
 								return [ statement.getClaim().getGuid() ];
 							} else {
 								return [];
 							}
-						} ) );
+						} );
 						if ( matchingStatementIds.length > 1 ) {
 							console.warn( `Deleting more than one matching statement on ${ entityId }`, matchingStatementIds );
 						}
 						return matchingStatementIds;
-					} ) );
+					} );
 
 				for ( const statementIdToRemove of statementIdsToRemove ) {
 					if ( this.stopped ) {
