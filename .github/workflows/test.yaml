@@ -7,8 +7,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    # only run one job at a time to avoid edit conflicts
-    concurrency: beta_cluster
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
