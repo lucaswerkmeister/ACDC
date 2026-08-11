@@ -162,7 +162,7 @@
 		};
 		let response = {};
 		do {
-			response = await api.get( Object.assign( {}, originalParams, response.continue ) );
+			response = await api.get( { ...originalParams, ...response.continue } );
 			yield* response.query.categorymembers.map( member => member.title );
 		} while ( 'continue' in response );
 	}
@@ -367,13 +367,15 @@ body.acdc-active .uls-menu {
 	 * @cfg {string[]} [skippedFiles] Don’t suggest these files in the lookup.
 	 */
 	function FileInputWidget( config ) {
-		FileInputWidget.super.call( this, Object.assign( {
+		FileInputWidget.super.call( this, {
 			placeholder: $.i18n( 'gadget-acdc-file-placeholder' ),
-		}, config ) );
-		OO.ui.mixin.LookupElement.call( this, Object.assign( {
+			...config,
+		} );
+		OO.ui.mixin.LookupElement.call( this, {
 			showPendingRequest: false,
 			$container: this.$input, // the default is this.$element, which in a non-'outline' TagMultiselectWidget is never attached to the DOM, so the lookup can’t position itself relative to it
-		}, config ) );
+			...config,
+		} );
 		this.skippedFiles = config.skippedFiles || [];
 		this.$element.addClass( 'acdc-fileInputWidget' );
 		this.$input.addClass( 'acdc-fileInputWidget-input' );
@@ -468,13 +470,15 @@ body.acdc-active .uls-menu {
 	 * @param {Object} [config] Configuration options
 	 */
 	function FilesWidget( config ) {
-		FilesWidget.super.call( this, Object.assign( {
+		FilesWidget.super.call( this, {
 			allowArbitrary: true,
-			inputWidget: new FileInputWidget( Object.assign( {
+			inputWidget: new FileInputWidget( {
 				placeholder: $.i18n( 'gadget-acdc-files-placeholder' ),
-			}, config ) ),
+				...config,
+			} ),
 			icon: 'ellipsis',
-		}, config ) );
+			...config,
+		} );
 		this.input.connect( this, { select: 'addTagFromInput' } );
 		this.on( 'change', () => {
 			this.input.setSkippedFiles( this.getTitles() );
@@ -687,9 +691,10 @@ body.acdc-active .uls-menu {
 	 * @param {Object} [config] Configuration options
 	 */
 	function StatementsProgressBarWidget( config ) {
-		StatementsProgressBarWidget.super.call( this, Object.assign( {
+		StatementsProgressBarWidget.super.call( this, {
 			progress: 0,
-		}, config ) );
+			...config,
+		} );
 		this.toggle( false );
 		this.$element.addClass( 'acdc-statementsProgressBarWidget' );
 	}
@@ -762,9 +767,10 @@ body.acdc-active .uls-menu {
 	 * @cfg {string[]} [tags] Change tags to apply to edits.
 	 */
 	function StatementsDialog( config ) {
-		StatementsDialog.super.call( this, Object.assign( {
+		StatementsDialog.super.call( this, {
 			size: 'large',
-		}, config ) );
+			...config,
+		} );
 		this.tags = ( config || {} ).tags || [];
 		this.$element.addClass( 'acdc-statementsDialog' );
 	}
