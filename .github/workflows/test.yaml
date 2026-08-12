@@ -15,7 +15,7 @@ jobs:
       - uses: browser-actions/setup-chrome@latest
         with:
           chrome-version: stable
-      - name: configure Git to prefer GitHub over Wikimedia Gerrit and Phabricator to avoid rate limit errors (429)
+      - name: configure Git to prefer GitHub over Wikimedia Gerrit to avoid rate limit errors (429)
         run: |
           cat >> ~/.gitconfig << 'EOF'
 
