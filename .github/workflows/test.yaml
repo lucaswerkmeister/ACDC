@@ -22,6 +22,9 @@ jobs:
           [url "https://github.com/wikimedia/mediawiki-extensions-"]
           insteadOf = "https://gerrit.wikimedia.org/r/mediawiki/extensions/"
 
+          [url "https://github.com/wikimedia/mediawiki-skins-"]
+          insteadOf = "https://gerrit.wikimedia.org/r/mediawiki/skins/"
+
           [url "https://github.com/wikimedia/wikibase-termbox.git"]
           insteadOf = "https://gerrit.wikimedia.org/r/wikibase/termbox"
           EOF
