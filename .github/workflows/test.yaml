@@ -36,6 +36,8 @@ jobs:
             WikibaseMediaInfo
             UniversalLanguageSelector # required by WikibaseMediaInfo
             WikibaseCirrusSearch # required by WikibaseMediaInfo
+            CirrusSearch # required by WikibaseCirrusSearch
+            Elastica # required by CirrusSearch
           local-settings: |
             $wgFileExtensions[] = 'pdf';
       - name: import test files
