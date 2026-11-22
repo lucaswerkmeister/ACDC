@@ -4,9 +4,7 @@ import wikimedia from 'eslint-config-wikimedia/flat.js';
 
 export default defineConfig( [
 	globalIgnores( [
-		'node_modules/',
-		'/.mw_credentials*',
-		'/w/', // MediaWiki install path in CI
+		'w/', // MediaWiki install path in CI
 	] ),
 	{
 		files: [
