@@ -52,3 +52,27 @@ jobs:
           MEDIAWIKI_PASSWORD: ${{ steps.setup-mediawiki.outputs.admin-password }}
           MEDIAWIKI_API_URL: ${{ steps.setup-mediawiki.outputs.api-url }}
           MEDIAWIKI_INDEX_URL: ${{ steps.setup-mediawiki.outputs.index-url }}
+  latest-revision-tagged:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-tags: true
+      - name: check that the latest revision on Wikimedia Commons corresponds to a Git tag
+        run: |
+          revid=$(
+            curl -s -G \
+              -A 'AC/DC CI (https://github.com/lucaswerkmeister/ACDC/)' \
+              -d action=query \
+              -d titles='MediaWiki:Gadget-ACDC.js' \
+              -d prop=revisions \
+              -d rvprop=ids \
+              -d format=json \
+              -d formatversion=2 \
+              'https://commons.wikimedia.org/w/api.php' |
+              jq -r '.query.pages[0].revisions[0].revid'
+          )
+          if ! git show-ref --quiet --tags "r$revid"; then
+            printf >&2 'https://commons.wikimedia.org/w/index.php?diff=%s has no matching Git tag\n' "$revid"
+            exit 1
+          fi
