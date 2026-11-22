@@ -7,10 +7,6 @@ export default defineConfig( [
 		'w/', // MediaWiki install path in CI
 	] ),
 	{
-		files: [
-			'**/*.js',
-			'**/*.mjs',
-		],
 		extends: wikimedia( 'common', 'jsduck', 'jquery', 'language/es2019' ),
 		languageOptions: {
 			globals: {
