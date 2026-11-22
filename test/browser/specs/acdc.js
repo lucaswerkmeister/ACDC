@@ -1,6 +1,5 @@
 const assert = require( 'assert' ),
 	fs = require( 'fs' ).promises,
-	process = require( 'process' ),
 	{ default: Session, set } = require( 'm3api' ),
 	{ queryFullPages } = require( 'm3api-query' ),
 	ACDC = require( '../pageobjects/ACDC' ),

@@ -1,8 +1,9 @@
-/* eslint-env node */
+/* global require, module -- node */
 
 const process = require( 'process' );
 const which = require( 'which' );
 
+// eslint-disable-next-line no-implicit-globals
 function whichChrome() {
 	const binaries = [ 'chrome', 'google-chrome-stable', 'chromium' ];
 	for ( const binary of binaries ) {

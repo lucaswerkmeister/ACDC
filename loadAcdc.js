@@ -1,4 +1,4 @@
-/* eslint-env webextensions */
+/* global browser -- webextensions */
 /* eslint-disable no-eval */
 
 ( function () {
