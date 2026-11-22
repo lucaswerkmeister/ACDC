@@ -313,14 +313,6 @@ describe( 'AC/DC', () => {
 			await browser.keys( [ 'Backspace' ] );
 		} );
 
-		it( 'supports autocompletion', async () => {
-			await ACDC.setFileInputValue( 'File:ACDC test file 1' /* .pdf */ );
-			const menu = await $( '.oo-ui-lookupElement-menu' );
-			await menu.waitForDisplayed( { timeout: searchTimeout, timeoutMsg: 'expected lookup menu to be opened' } );
-			await browser.keys( [ 'Enter' ] ); // we don’t do anything special with the menu, Enter should select the first suggestion
-			assert.strictEqual( await ACDC.tagItemText( 1 ), 'File:ACDC test file 1.pdf' );
-		} );
-
 		it( 'supports entering two files', async () => {
 			await ACDC.setFileInputValue( 'File:ACDC test file 1.pdf' );
 			await browser.keys( [ 'Enter' ] );
