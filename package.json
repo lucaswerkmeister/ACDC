@@ -13,7 +13,8 @@
 		"eslint": "^8.57.1",
 		"eslint-config-wikimedia": "^0.30.0",
 		"eslint-plugin-webdriverio": "^1.0.1",
-		"mwbot": "^2.0.0",
+		"m3api": "^1.1.0",
+		"m3api-query": "^1.1.0",
 		"wdio-chromedriver-service": "^8.1.1",
 		"which": "^5.0.0"
 	},

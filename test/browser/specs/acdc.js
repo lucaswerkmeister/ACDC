@@ -1,7 +1,8 @@
 const assert = require( 'assert' ),
 	fs = require( 'fs' ).promises,
 	process = require( 'process' ),
-	MWBot = require( 'mwbot' ),
+	{ default: Session, set } = require( 'm3api' ),
+	{ queryFullPages } = require( 'm3api-query' ),
 	ACDC = require( '../pageobjects/ACDC' ),
 	MediaWiki = require( '../pageobjects/MediaWiki' ),
 	{ searchTimeout, submitTimeout } = require( '../timeouts' );
@@ -9,7 +10,11 @@ const assert = require( 'assert' ),
 const apiUrl = process.env.MEDIAWIKI_API_URL,
 	indexUrl = process.env.MEDIAWIKI_INDEX_URL;
 
-const bot = new MWBot( { apiUrl } );
+const session = new Session( apiUrl, {
+	formatversion: 2,
+}, {
+	userAgent: 'AC/DC browser tests (https://github.com/lucaswerkmeister/ACDC/)',
+} );
 
 describe( 'AC/DC', () => {
 	let acdc,
@@ -393,12 +398,10 @@ describe( 'AC/DC', () => {
 		};
 
 		before( 'load page IDs', async () => {
-			const response = await bot.request( {
-				action: 'query',
-				titles: Object.keys( filePageIds ).join( '|' ),
-				formatversion: 2,
-			} );
-			for ( const page of response.query.pages ) {
+			for await ( const page of queryFullPages( session, {
+				titles: set( ...Object.keys( filePageIds ) ),
+				prop: set(),
+			} ) ) {
 				filePageIds[ page.title ] = page.pageid;
 			}
 		} );
